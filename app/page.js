@@ -4,7 +4,7 @@ import { Poppins } from 'next/font/google';
 import { auth, db, storage, googleProvider } from './lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import {
-  collection, addDoc, getDocs, query, orderBy, serverTimestamp, where, doc, getDoc, setDoc, updateDoc
+  collection, addDoc, getDocs, query, orderBy, serverTimestamp, where, doc, getDoc, setDoc, updateDoc, deleteDoc
 } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -145,9 +145,23 @@ export default function Home() {
   const [speechSupported] = useState(() => typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window));
   const recognitionRef = useRef(null);
 
+  const [favourites, setFavourites] = useState(new Set());
+  const [reviewStats, setReviewStats] = useState({});
+  const [cityFilter, setCityFilter] = useState('All Cities');
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
   // Review quick questions
   const [certVisible, setCertVisible] = useState(null);
   const [familyFriendly, setFamilyFriendly] = useState(null);
+
+  // Owner reply state
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState('');
+  const [submittingReply, setSubmittingReply] = useState(false);
+
+  // Open Now filter
+  const [openNowFilter, setOpenNowFilter] = useState(false);
 
   // Verification form state
   const [coverPhotoFile, setCoverPhotoFile] = useState(null);
@@ -175,15 +189,31 @@ export default function Home() {
       if (u) {
         fetchSubscription(u.uid);
         fetchUserRole(u.uid);
+        fetchFavourites(u.uid);
       } else {
         setSubscription(null);
         setUserRole(null);
+        setFavourites(new Set());
       }
     });
     return unsub;
   }, []);
 
-  useEffect(() => { fetchRestaurants(); }, []);
+  useEffect(() => { fetchRestaurants(); fetchAllReviewStats(); }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setTimeout(() => setShowInstallBanner(true), 30000);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
 
   async function fetchUserRole(userId) {
     try {
@@ -267,6 +297,61 @@ export default function Home() {
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   }
 
+  async function fetchFavourites(userId) {
+    try {
+      const snap = await getDocs(collection(db, 'favourites', userId, 'restaurants'));
+      setFavourites(new Set(snap.docs.map(d => d.id)));
+    } catch (e) { setFavourites(new Set()); }
+  }
+
+  async function toggleFavourite(e, restaurantId) {
+    e.stopPropagation();
+    if (!user) return handleLogin();
+    const ref = doc(db, 'favourites', user.uid, 'restaurants', restaurantId);
+    if (favourites.has(restaurantId)) {
+      await deleteDoc(ref);
+      setFavourites(prev => { const n = new Set(prev); n.delete(restaurantId); return n; });
+    } else {
+      await setDoc(ref, { savedAt: serverTimestamp() });
+      setFavourites(prev => new Set([...prev, restaurantId]));
+    }
+  }
+
+  async function fetchAllReviewStats() {
+    try {
+      const snap = await getDocs(collection(db, 'reviews'));
+      const stats = {};
+      snap.docs.forEach(d => {
+        const { restaurantId, rating } = d.data();
+        if (!restaurantId) return;
+        if (!stats[restaurantId]) stats[restaurantId] = { count: 0, totalScore: 0 };
+        stats[restaurantId].count++;
+        const score = { recommended: 5, good: 4, average: 3, not_recommended: 1 }[rating] || 3;
+        stats[restaurantId].totalScore += score;
+      });
+      Object.keys(stats).forEach(id => {
+        stats[id].avg = Math.round((stats[id].totalScore / stats[id].count) * 10) / 10;
+      });
+      setReviewStats(stats);
+    } catch (e) {}
+  }
+
+  async function shareRestaurant() {
+    const url = `${window.location.origin}/review/${selected.id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: selected.name, text: `Check out ${selected.name} on HalalSpot!`, url });
+      } catch (e) {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast('Link copied!');
+      } catch (e) {
+        showToast('Could not copy link', 'error');
+      }
+    }
+  }
+
   async function openRestaurant(rest) {
     setSelected(rest);
     setView('restaurant');
@@ -319,6 +404,13 @@ export default function Home() {
     if (!reviewText.trim()) return showToast('Please write a review before submitting.', 'error');
     setSubmitting(true);
     try {
+      let photoUrl = null;
+      if (photo) {
+        const ext = photo.name.split('.').pop() || 'jpg';
+        const photoRef = storageRef(storage, `review_photos/${selected.id}/${user.uid}_${Date.now()}.${ext}`);
+        await uploadBytes(photoRef, photo);
+        photoUrl = await getDownloadURL(photoRef);
+      }
       await addDoc(collection(db, 'reviews'), {
         restaurantId: selected.id,
         restaurantName: selected.name,
@@ -329,6 +421,7 @@ export default function Home() {
         rating,
         certVisible: certVisible,
         familyFriendly: familyFriendly,
+        photoUrl,
         createdAt: serverTimestamp(),
       });
       setReviewText('');
@@ -338,12 +431,50 @@ export default function Home() {
       setPhoto(null);
       setPhotoPreview(null);
       showToast('Review posted!');
+      const _score = { recommended: 5, good: 4, average: 3, not_recommended: 1 }[rating] || 3;
+      setReviewStats(prev => {
+        const current = prev[selected.id] || { count: 0, totalScore: 0 };
+        const newCount = current.count + 1;
+        const newTotal = current.totalScore + _score;
+        return { ...prev, [selected.id]: { count: newCount, totalScore: newTotal, avg: Math.round((newTotal / newCount) * 10) / 10 } };
+      });
+      fetch('/api/notify-owner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurantId: selected.id, rating, reviewText }),
+      }).catch(() => {});
       const r = await fetchReviews(selected.id);
       setReviews(r);
     } catch (e) {
       showToast('Failed to post review. Please try again.', 'error');
     }
     setSubmitting(false);
+  }
+
+  async function submitReply(reviewId) {
+    if (!replyText.trim()) return showToast('Please write a reply before posting.', 'error');
+    setSubmittingReply(true);
+    try {
+      await updateDoc(doc(db, 'reviews', reviewId), {
+        reply: {
+          text: replyText,
+          userId: user.uid,
+          userName: user.displayName,
+          userPhoto: user.photoURL,
+          createdAt: new Date().toISOString(),
+        },
+      });
+      setReviews(prev => prev.map(r => r.id === reviewId
+        ? { ...r, reply: { text: replyText, userId: user.uid, userName: user.displayName, userPhoto: user.photoURL, createdAt: new Date().toISOString() } }
+        : r
+      ));
+      setReplyText('');
+      setReplyingTo(null);
+      showToast('Reply posted!');
+    } catch (e) {
+      showToast('Failed to post reply. Please try again.', 'error');
+    }
+    setSubmittingReply(false);
   }
 
   async function generateSummary() {
@@ -537,9 +668,19 @@ export default function Home() {
   const filtered = restaurants.filter(r => {
     const q = search.trim().toLowerCase();
     const matchesSearch = !q || r.name?.toLowerCase().includes(q) || r.location?.toLowerCase().includes(q) || r.cuisine?.toLowerCase().includes(q);
-    const matchesCuisine = cuisineFilter === 'All' || r.cuisine?.toLowerCase().includes(cuisineFilter.toLowerCase());
-    return matchesSearch && matchesCuisine;
+    const matchesCuisine = cuisineFilter === 'All' || (cuisineFilter === 'Favourites' ? favourites.has(r.id) : r.cuisine?.toLowerCase().includes(cuisineFilter.toLowerCase()));
+    const matchesCity = cityFilter === 'All Cities' || r.city === cityFilter || r.location?.includes(cityFilter);
+    const matchesOpen = !openNowFilter || ['open', 'closing'].includes(getOpenStatus(r.hours)?.status);
+    return matchesSearch && matchesCuisine && matchesCity && matchesOpen;
   });
+
+  const cities = [...new Set(restaurants.map(r => r.city || r.location?.split(',')[0]?.trim()).filter(Boolean))].sort();
+
+  const topRated = restaurants
+    .filter(r => reviewStats[r.id]?.count >= 3)
+    .map(r => ({ ...r, avg: reviewStats[r.id].avg, count: reviewStats[r.id].count }))
+    .sort((a, b) => b.avg - a.avg)
+    .slice(0, 5);
 
   function getAvatarStyle(letter) {
     const styles = [
@@ -804,7 +945,18 @@ export default function Home() {
           </div>
           {/* Restaurant info over gradient */}
           <div className="absolute bottom-0 left-0 right-0 px-4 pb-5">
+            <div className="flex items-end justify-between gap-2">
             <h1 className="text-2xl font-extrabold text-white leading-tight">{selected.name}</h1>
+            <button
+              onClick={shareRestaurant}
+              className="flex-shrink-0 p-2 rounded-xl bg-black/40 backdrop-blur-sm hover:bg-black/60 transition-all duration-200 mb-0.5"
+              title="Share restaurant"
+            >
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+            </button>
+            </div>
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               <span className="text-gray-400 text-sm flex items-center gap-1">
                 <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -1277,6 +1429,9 @@ export default function Home() {
                       )}
                     </div>
                     <p className="text-gray-300 text-sm leading-relaxed pl-10">{r.text}</p>
+                    {r.photoUrl && (
+                      <img src={r.photoUrl} alt="Review photo" className="mt-2 ml-10 rounded-xl object-cover border border-white/10 max-h-48 w-auto max-w-[calc(100%-2.5rem)]" />
+                    )}
                     {(r.certVisible !== null && r.certVisible !== undefined) || (r.familyFriendly !== null && r.familyFriendly !== undefined) ? (
                       <div className="flex flex-wrap gap-1.5 mt-2 pl-10">
                         {r.certVisible !== null && r.certVisible !== undefined && (
@@ -1291,6 +1446,52 @@ export default function Home() {
                         )}
                       </div>
                     ) : null}
+                    {r.reply && (
+                      <div className="mt-3 ml-10 bg-[#1a1a1a] border-l-2 border-green-500/40 rounded-xl p-3 space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/25">🏪 Owner reply</span>
+                          <span className="text-xs text-gray-500">{r.reply.userName}</span>
+                        </div>
+                        <p className="text-gray-300 text-xs leading-relaxed">{r.reply.text}</p>
+                      </div>
+                    )}
+                    {userRole === 'owner' && !r.reply && replyingTo !== r.id && (
+                      <div className="mt-2 pl-10">
+                        <button
+                          onClick={() => { setReplyingTo(r.id); setReplyText(''); }}
+                          className="text-xs text-green-400/70 hover:text-green-400 transition-colors duration-200"
+                        >
+                          Reply
+                        </button>
+                      </div>
+                    )}
+                    {replyingTo === r.id && (
+                      <div className="mt-3 ml-10 space-y-2">
+                        <textarea
+                          value={replyText}
+                          onChange={e => setReplyText(e.target.value)}
+                          placeholder="Write your reply..."
+                          rows={2}
+                          className="w-full bg-[#1A1A1A] rounded-xl px-3 py-2 text-xs text-gray-100 placeholder-gray-600 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 resize-none transition-all duration-200"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => submitReply(r.id)}
+                            disabled={submittingReply}
+                            className="bg-green-500 hover:bg-green-600 active:scale-95 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {submittingReply ? 'Posting...' : 'Post'}
+                          </button>
+                          <button
+                            onClick={() => { setReplyingTo(null); setReplyText(''); }}
+                            disabled={submittingReply}
+                            className="text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-200"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })
@@ -1380,20 +1581,30 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Search bar */}
-        <div className="relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+        {/* Search bar + city filter */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search halal restaurants, cuisines…"
+              className="w-full bg-[#111111] border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-green-500/40 focus:ring-2 focus:ring-green-500/10 transition-all duration-200 text-sm tracking-wide shadow-inner"
+            />
           </div>
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search halal restaurants, cuisines, cities…"
-            className="w-full bg-[#111111] border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-green-500/40 focus:ring-2 focus:ring-green-500/10 transition-all duration-200 text-sm tracking-wide shadow-inner"
-          />
+          <select
+            value={cityFilter}
+            onChange={e => setCityFilter(e.target.value)}
+            className="flex-shrink-0 bg-[#111111] border border-white/10 rounded-2xl px-3 py-4 text-sm text-gray-300 focus:outline-none focus:border-green-500/40 transition-all duration-200 cursor-pointer max-w-[140px]"
+          >
+            <option value="All Cities">All Cities</option>
+            {cities.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
         </div>
 
         {/* Halal-only banner */}
@@ -1405,6 +1616,30 @@ export default function Home() {
 
         {/* Cuisine filter pills */}
         <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setOpenNowFilter(v => !v)}
+            className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all duration-200 flex items-center gap-1.5 ${
+              openNowFilter
+                ? 'bg-green-500 text-white shadow-md shadow-green-500/20'
+                : 'bg-transparent text-gray-400 hover:text-gray-200 border border-white/15 hover:border-white/30'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${openNowFilter ? 'bg-white' : 'bg-green-500'}`} />
+            Open Now
+          </button>
+          <button
+            onClick={() => setCuisineFilter(cuisineFilter === 'Favourites' ? 'All' : 'Favourites')}
+            className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all duration-200 flex items-center gap-1.5 ${
+              cuisineFilter === 'Favourites'
+                ? 'bg-green-500 text-white shadow-md shadow-green-500/20'
+                : 'bg-transparent text-gray-400 hover:text-gray-200 border border-white/15 hover:border-white/30'
+            }`}
+          >
+            <svg className="w-3 h-3" fill={cuisineFilter === 'Favourites' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            Favourites
+          </button>
           {(showAllCuisines ? CUISINES : CUISINES.slice(0, 5)).map(c => (
             <button
               key={c}
@@ -1799,6 +2034,43 @@ export default function Home() {
         )}
 
 
+        {/* Top Rated section */}
+        {topRated.length > 0 && (
+          <div className="space-y-3">
+            <h2 className="font-bold text-white text-base flex items-center gap-2">
+              <span className="text-yellow-400">⭐</span> Top Rated
+            </h2>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: 'none' }}>
+              {topRated.map(rest => (
+                <button
+                  key={rest.id}
+                  onClick={() => openRestaurant(rest)}
+                  className="flex-shrink-0 w-44 bg-[#111111] rounded-2xl overflow-hidden border border-white/5 hover:border-green-500/20 hover:-translate-y-1 transition-all duration-200 text-left"
+                >
+                  <div className="h-24 relative overflow-hidden">
+                    <img
+                      src={rest.coverImageUrl || CUISINE_IMAGES[rest.cuisine] || DEFAULT_FOOD_IMAGE}
+                      alt={rest.name}
+                      className="w-full h-full object-cover"
+                      onError={e => { e.currentTarget.style.display = 'none'; }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  </div>
+                  <div className="p-3 space-y-1">
+                    <p className="text-white text-xs font-bold line-clamp-1">{rest.name}</p>
+                    <div className="flex items-center gap-1">
+                      <span className="text-yellow-400 text-xs">⭐</span>
+                      <span className="text-xs font-semibold text-white">{rest.avg}</span>
+                      <span className="text-xs text-gray-500">({rest.count})</span>
+                    </div>
+                    {rest.cuisine && <span className="text-[10px] text-green-400">{rest.cuisine}</span>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Divider */}
         <div className="relative flex items-center gap-4">
           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-green-500/20 to-transparent" />
@@ -1828,20 +2100,33 @@ export default function Home() {
               </div>
               <p className="text-white font-semibold text-lg">No halal restaurants found</p>
               <p className="text-gray-500 text-sm mt-1 max-w-xs mx-auto">Try a different search term or cuisine filter</p>
-              {cuisineFilter !== 'All' && (
-                <button onClick={() => setCuisineFilter('All')} className="mt-4 text-sm text-green-400 hover:text-green-300 transition-colors">
-                  Clear filter
-                </button>
+              {(cuisineFilter !== 'All' || openNowFilter) && (
+                <div className="flex flex-col items-center gap-2 mt-4">
+                  {cuisineFilter !== 'All' && (
+                    <button onClick={() => setCuisineFilter('All')} className="text-sm text-green-400 hover:text-green-300 transition-colors">
+                      Clear cuisine filter
+                    </button>
+                  )}
+                  {openNowFilter && (
+                    <button onClick={() => setOpenNowFilter(false)} className="text-sm text-green-400 hover:text-green-300 transition-colors">
+                      Clear "Open Now" filter
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           ) : (
             filtered.map(rest => {
               const certStatus = certExpiryStatus(rest.certExpiryDate);
+              const stats = reviewStats[rest.id];
               return (
-                <button
+                <div
                   key={rest.id}
                   onClick={() => openRestaurant(rest)}
-                  className="group bg-[#111111] rounded-2xl overflow-hidden border border-white/5 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-500/15 transition-all duration-300 text-left w-full"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => e.key === 'Enter' && openRestaurant(rest)}
+                  className="group bg-[#111111] rounded-2xl overflow-hidden border border-white/5 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-green-500/10 hover:border-green-500/15 transition-all duration-300 text-left w-full cursor-pointer"
                 >
                   {/* Image area */}
                   <div className="relative h-40 bg-gradient-to-br from-green-950/60 via-[#0d1f0d] to-[#111111] flex items-center justify-center overflow-hidden">
@@ -1883,6 +2168,21 @@ export default function Home() {
                   <div className="p-4 space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-bold text-white text-sm leading-snug line-clamp-1">{rest.name}</h3>
+                      <button
+                        onClick={e => toggleFavourite(e, rest.id)}
+                        className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors duration-200"
+                        aria-label={favourites.has(rest.id) ? 'Remove from favourites' : 'Add to favourites'}
+                      >
+                        {favourites.has(rest.id) ? (
+                          <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                          </svg>
+                        )}
+                      </button>
                       {(() => {
                         const s = getOpenStatus(rest.hours);
                         if (!s) return null;
@@ -1910,6 +2210,15 @@ export default function Home() {
                         return <span className="text-[11px] text-gray-600">{s.label}</span>;
                       })()}
                     </div>
+                    {stats ? (
+                      <div className="flex items-center gap-1 text-xs">
+                        <span className="text-yellow-400">⭐</span>
+                        <span className="font-semibold text-white">{stats.avg}</span>
+                        <span className="text-gray-500">({stats.count} review{stats.count !== 1 ? 's' : ''})</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-600">No reviews yet</span>
+                    )}
                     <div className="flex items-center gap-1 text-xs text-gray-500">
                       <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
@@ -1917,12 +2226,43 @@ export default function Home() {
                       <span className="truncate">{rest.location}</span>
                     </div>
                   </div>
-                </button>
+                </div>
               );
             })
           )}
         </div>
       </main>
+
+      {/* PWA install banner — mobile only, appears after 30s */}
+      {showInstallBanner && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#111111] border-t border-white/10 px-4 py-4 flex items-center justify-between gap-3 sm:hidden">
+          <div className="min-w-0">
+            <p className="text-white text-sm font-semibold">Install HalalSpot</p>
+            <p className="text-gray-500 text-xs truncate">Add to your home screen for quick access</p>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            <button
+              onClick={async () => {
+                if (deferredPrompt) {
+                  deferredPrompt.prompt();
+                  await deferredPrompt.userChoice;
+                  setDeferredPrompt(null);
+                }
+                setShowInstallBanner(false);
+              }}
+              className="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-all duration-200"
+            >
+              Install
+            </button>
+            <button
+              onClick={() => setShowInstallBanner(false)}
+              className="text-gray-500 hover:text-white w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-sm transition-all duration-200"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
