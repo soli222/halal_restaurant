@@ -1,6 +1,9 @@
 'use client';
 import { useState, useEffect, useRef, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { Poppins } from 'next/font/google';
+
+const RestaurantLocationMap = dynamic(() => import('./components/RestaurantLocationMap'), { ssr: false });
 import { auth, db, storage, googleProvider } from './lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import {
@@ -552,6 +555,22 @@ export default function Home() {
         await updateDoc(doc(db, 'restaurants', docRef.id), { coverImageUrl });
       } catch (_) {}
     }
+    // Fire-and-forget geocoding for map support
+    (async () => {
+      try {
+        const q = encodeURIComponent(`${newRestName.trim()} ${newRestLocation.trim()}`);
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
+          headers: { 'User-Agent': 'HalalSpot/1.0' },
+        });
+        const data = await res.json();
+        if (data.length > 0) {
+          await updateDoc(doc(db, 'restaurants', docRef.id), {
+            lat: parseFloat(data[0].lat),
+            lng: parseFloat(data[0].lon),
+          });
+        }
+      } catch (_) {}
+    })();
     setNewRestName('');
     setNewRestLocation('');
     setNewCertNumber('');
@@ -1183,6 +1202,9 @@ export default function Home() {
               </div>
             </div>
           )}
+
+          {/* Location map */}
+          <RestaurantLocationMap restaurant={selected} />
 
           {/* Analytics dashboard — Pro subscribers */}
           {isSubscribed() && (
