@@ -7,6 +7,7 @@ export default function HomeView({
   user, userRole,
   handleLogin, handleLogout,
   onStartOwnerOnboarding,
+  onOwnerSignIn,
   // Navigation
   view, setView, selected, setSelected,
   // Toasts
@@ -209,6 +210,12 @@ export default function HomeView({
                     className="whitespace-nowrap bg-amber-500 hover:bg-amber-400 active:scale-95 text-black font-bold px-6 py-3.5 rounded-2xl text-sm transition-all duration-200 shadow-lg shadow-amber-500/25"
                   >
                     List my restaurant →
+                  </button>
+                  <button
+                    onClick={onOwnerSignIn}
+                    className="whitespace-nowrap text-sm font-medium text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:border-amber-500/60 px-6 py-2.5 rounded-2xl transition-all duration-200"
+                  >
+                    Already listed? Sign in
                   </button>
                   <p className="text-xs text-gray-600 text-center">7 days free · Cancel anytime</p>
                 </div>

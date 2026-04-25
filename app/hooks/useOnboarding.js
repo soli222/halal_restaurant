@@ -4,7 +4,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { DEFAULT_HOURS } from '../constants';
 
-export function useOnboarding(user, showToast, setOwnerStep, ownerStep) {
+export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserRole) {
   const [ownerBusinessName, setOwnerBusinessName] = useState('');
   const [ownerCity, setOwnerCity] = useState('');
   const [ownerCuisineType, setOwnerCuisineType] = useState('');
@@ -48,11 +48,6 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep) {
 
   async function submitVerification() {
     setVerifyError('');
-    const imageFiles = verifyFiles.filter(f => f.type.startsWith('image/'));
-    const pdfFiles = verifyFiles.filter(f => f.type === 'application/pdf');
-    if (pdfFiles.length === 0 && imageFiles.length < 2) {
-      setVerifyError('Upload at least one PDF or at least two images as proof.'); return;
-    }
     if (!businessLicenseFile) { setVerifyError('Business License is required.'); return; }
     if (!healthPermitFile) { setVerifyError('Health Permit / Food Safety Certificate is required.'); return; }
     if (!halalCertFile) { setVerifyError('Halal Certification Certificate is required.'); return; }
@@ -80,6 +75,11 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep) {
       const hcRef = storageRef(storage, `verification_proofs/${user.uid}/halal_certificate/${halalCertFile.name}`);
       await uploadBytes(hcRef, halalCertFile);
       const halalCertificateUrl = await getDownloadURL(hcRef);
+
+      // Ensure the user is marked as 'owner' in Firestore and React state,
+      // regardless of whether they signed in before or during onboarding.
+      await setDoc(doc(db, 'users', user.uid), { role: 'owner' }, { merge: true });
+      if (setUserRole) setUserRole('owner');
 
       await setDoc(doc(db, 'verification_requests', user.uid), {
         userId: user.uid,

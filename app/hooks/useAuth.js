@@ -13,8 +13,9 @@ export function useAuth(showToast) {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
-      setUser(u);
       if (u) {
+        // Resolve role from Firestore before setting user so both land in the
+        // same React render — avoids the intermediate "user set, role null" flash.
         const snap = await getDoc(doc(db, 'users', u.uid));
         const data = snap.exists() ? snap.data() : {};
         if (data.role) {
@@ -32,7 +33,9 @@ export function useAuth(showToast) {
           setUserRole('customer');
           setOnboardingComplete(false);
         }
+        setUser(u);
       } else {
+        setUser(null);
         setUserRole(null);
         setOnboardingComplete(false);
       }
@@ -42,7 +45,11 @@ export function useAuth(showToast) {
 
   async function handleLogin() {
     try { await signInWithPopup(auth, googleProvider); }
-    catch (e) { showToast('Sign in failed. Please try again.', 'error'); }
+    catch (e) {
+      if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+        showToast('Sign in failed. Please try again.', 'error');
+      }
+    }
   }
 
   async function handleLogout() {

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import { useToast } from './hooks/useToast';
 import { useAuth } from './hooks/useAuth';
@@ -12,13 +12,17 @@ import { useSearch } from './hooks/useSearch';
 
 import OwnerOnboarding from './components/OwnerOnboarding';
 import PostOnboardingSubscription from './components/PostOnboardingSubscription';
+import OwnerDashboard from './components/OwnerDashboard';
 import PricingView from './components/PricingView';
 import RestaurantDetailView from './components/RestaurantDetailView';
 import HomeView from './components/HomeView';
+import { useOwnerDashboard } from './hooks/useOwnerDashboard';
 
 export default function Home() {
   const [view, setView] = useState('home');
   const [ownerStep, setOwnerStep] = useState(null);
+  const autoResumeDisabled = useRef(false);
+  const [pendingOwnerDashboard, setPendingOwnerDashboard] = useState(false);
 
   const { toasts, showToast } = useToast();
 
@@ -71,7 +75,8 @@ export default function Home() {
     shareRestaurant, getAnalytics, ratingCount,
   } = useReviews(user, selected, showToast, setReviewStats);
 
-  const onboarding = useOnboarding(user, showToast, setOwnerStep, ownerStep);
+  const onboarding = useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserRole);
+  const ownerDashboard = useOwnerDashboard(showToast);
 
   const {
     search, setSearch,
@@ -92,8 +97,11 @@ export default function Home() {
   // Bootstrap: load restaurants + review stats on mount
   useEffect(() => { fetchRestaurants(); fetchAllReviewStats(); }, []);
 
-  // Auto-resume returning owners who haven't completed onboarding
+  // Auto-resume returning owners who haven't completed onboarding.
+  // Skipped when the user explicitly signed in via the header button or
+  // navigated home from onboarding — in those cases autoResumeDisabled is set.
   useEffect(() => {
+    if (autoResumeDisabled.current) return;
     if (user && userRole === 'owner' && !onboardingComplete && ownerStep === null) {
       setOwnerStep(1);
     }
@@ -123,6 +131,48 @@ export default function Home() {
     }
   }, [user?.uid]);
 
+  // Redirect to dashboard after "Already listed? Sign in" button triggers sign-in
+  useEffect(() => {
+    if (!pendingOwnerDashboard || !user || !userRole) return;
+    setPendingOwnerDashboard(false);
+    if (userRole !== 'owner') {
+      showToast('No owner account found for this Google account.', 'error');
+      return;
+    }
+    autoResumeDisabled.current = true;
+    ownerDashboard.fetchDashboardData(user.uid);
+    setView('owner-dashboard');
+  }, [pendingOwnerDashboard, user, userRole]);
+
+  // Header "Sign in with Google" — customer intent, must not trigger owner onboarding
+  function handleHeaderLogin() {
+    autoResumeDisabled.current = true;
+    handleLogin();
+  }
+
+  // "← Home" inside OwnerOnboarding — user chose to exit, suppress auto-resume
+  function handleOnboardingHome() {
+    autoResumeDisabled.current = true;
+    setOwnerStep(null);
+  }
+
+  // "Already listed? Sign in" button — signs in then redirects to dashboard
+  function handleOwnerSignIn() {
+    if (user) {
+      if (userRole === 'owner') {
+        autoResumeDisabled.current = true;
+        ownerDashboard.fetchDashboardData(user.uid);
+        setView('owner-dashboard');
+      } else {
+        showToast("This account isn't registered as an owner.", 'error');
+      }
+      return;
+    }
+    autoResumeDisabled.current = true;
+    setPendingOwnerDashboard(true);
+    handleLogin();
+  }
+
   function handleShowPricing() {
     if (!user) return handleLogin();
     setView('pricing');
@@ -139,6 +189,7 @@ export default function Home() {
       <OwnerOnboarding
         ownerStep={ownerStep}
         setOwnerStep={setOwnerStep}
+        onHome={handleOnboardingHome}
         user={user}
         handleSignInToSubmit={handleSignInToSubmit}
         verifyError={onboarding.verifyError}
@@ -177,12 +228,45 @@ export default function Home() {
   }
 
   // ─── POST-ONBOARDING SUBSCRIPTION ────────────────────────────────────────
-  if (user && userRole === 'owner' && ownerStep === 'subscription') {
+  if (user && ownerStep === 'subscription') {
     return (
       <PostOnboardingSubscription
         handleSubscribe={handleSubscribe}
         loadingSub={loadingSub}
-        completeOnboarding={() => { completeOnboarding(); setOwnerStep(null); }}
+        completeOnboarding={() => { completeOnboarding(); setOwnerStep(null); ownerDashboard.fetchDashboardData(user.uid); setView('owner-dashboard'); }}
+      />
+    );
+  }
+
+  // ─── OWNER DASHBOARD ─────────────────────────────────────────────────────────
+  if (view === 'owner-dashboard' && user && userRole === 'owner') {
+    return (
+      <OwnerDashboard
+        user={user}
+        toasts={toasts}
+        subscription={subscription}
+        isSubscribed={isSubscribed}
+        isPro={isPro}
+        verificationRequest={ownerDashboard.verificationRequest}
+        linkedRestaurant={ownerDashboard.linkedRestaurant}
+        dashboardReviews={ownerDashboard.dashboardReviews}
+        loadingDashboard={ownerDashboard.loadingDashboard}
+        savingProfile={ownerDashboard.savingProfile}
+        editDescription={ownerDashboard.editDescription}
+        setEditDescription={ownerDashboard.setEditDescription}
+        editHours={ownerDashboard.editHours}
+        setEditHours={ownerDashboard.setEditHours}
+        editWebsiteUrl={ownerDashboard.editWebsiteUrl}
+        setEditWebsiteUrl={ownerDashboard.setEditWebsiteUrl}
+        editMapsUrl={ownerDashboard.editMapsUrl}
+        setEditMapsUrl={ownerDashboard.setEditMapsUrl}
+        coverImagePreview={ownerDashboard.coverImagePreview}
+        handleCoverChange={ownerDashboard.handleCoverChange}
+        saveProfile={ownerDashboard.saveProfile}
+        handleLogout={handleLogout}
+        setView={setView}
+        handleSubscribe={handleSubscribe}
+        loadingSub={loadingSub}
       />
     );
   }
@@ -252,9 +336,10 @@ export default function Home() {
     <HomeView
       user={user}
       userRole={userRole}
-      handleLogin={handleLogin}
+      handleLogin={handleHeaderLogin}
       handleLogout={handleLogout}
       onStartOwnerOnboarding={() => setOwnerStep(1)}
+      onOwnerSignIn={handleOwnerSignIn}
       view={view}
       setView={setView}
       selected={selected}

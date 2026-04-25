@@ -1,7 +1,7 @@
 import { CUISINES, CERTIFYING_BODIES } from '../constants';
 
 export default function OwnerOnboarding({
-  ownerStep, setOwnerStep,
+  ownerStep, setOwnerStep, onHome,
   user, handleSignInToSubmit,
   verifyError, setVerifyError,
   ownerBusinessName, setOwnerBusinessName,
@@ -67,7 +67,7 @@ export default function OwnerOnboarding({
         <div className="flex items-center gap-4">
           <span className="text-xs text-gray-500">Step {ownerStep} of 5</span>
           <button
-            onClick={() => setOwnerStep(null)}
+            onClick={onHome}
             className="text-xs text-gray-500 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-all duration-200"
           >
             ← Home
