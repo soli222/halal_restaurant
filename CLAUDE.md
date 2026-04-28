@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev      # Start development server at http://localhost:3000
+npm run dev      # Start development server at http://localhost:3007
 npm run build    # Production build
 npm run start    # Start production server
 ```
@@ -25,49 +25,53 @@ This is a **Next.js 14 App Router** project — all routes live under `app/`.
 
 ### Pages
 
-- `app/page.js` — Thin orchestrator (~200 lines). Composes all hooks, owns top-level state (`view`, `ownerStep`), and renders the correct view component based on state. Does **not** contain UI directly.
+- `app/page.js` — Thin orchestrator. Composes all hooks, owns top-level state (`view`, `ownerStep`), and renders the correct view component based on state. Does **not** contain UI directly.
 - `app/review/[id]/page.js` — Standalone shareable review page for a single restaurant (accessed via QR code or direct link).
-- `app/admin/page.js` — Admin-only dashboard for approving/rejecting halal verification requests. Admin role is checked via `users/{uid}.role === 'admin'` in Firestore.
+- `app/admin/page.js` — Admin-only dashboard for approving/rejecting halal verification requests. Admin role is checked client-side via `users/{uid}.role === 'admin'` in Firestore, but all write actions go through `/api/admin/update-status` which re-verifies server-side.
 
 ### View components
 
-- `app/components/HomeView/index.js` — Main homepage: hero, search/filter, restaurant grid, top rated, recently viewed, owner CTA.
+- `app/components/HomeView/index.js` — Main homepage: hero, search/filter, restaurant grid, top rated, recently viewed, owner CTA. The informational sections and owner CTA are only shown when `!selected && (!user || userRole === 'customer')`.
 - `app/components/OwnerOnboarding.js` — 5-step owner verification flow (restaurant info → halal cert → documents → online presence → review & confirm).
 - `app/components/PostOnboardingSubscription.js` — Subscription prompt shown after owner completes verification.
 - `app/components/PricingView.js` — Pricing/upgrade page for customers.
-- `app/components/RestaurantDetailView.js` — Full restaurant page: reviews, AI summary, analytics, reply, share.
+- `app/components/RestaurantDetailView.js` — Full restaurant page: reviews, AI summary, analytics, reply, share. Accepts `setSelected` prop — the Back button calls both `setSelected(null)` and `setView('home')` to fully reset navigation state.
 - `app/components/RestaurantMap.js` / `RestaurantLocationMap.js` — Leaflet map components.
 - `app/components/Toast.js` — Toast notification renderer.
 
 ### Hooks (all state lives here, not in page.js)
 
-- `useAuth` — Firebase Auth (Google Sign-In), user/role state, onboarding completion.
-- `useSubscription` — Stripe subscription status and checkout.
+- `useAuth` — Firebase Auth (Google Sign-In), user/role state, onboarding completion. `handleRoleSelect` only accepts `'customer'` or `'owner'` — role elevation to `'admin'` is silently blocked.
+- `useSubscription` — Stripe subscription status and checkout. `handleSubscribe` attaches a Firebase ID token to the checkout request.
 - `useFavourites` — Favourites list, toggle, Firestore sync.
 - `useRestaurants` — Restaurant list, selected restaurant, recently viewed, add restaurant.
-- `useReviews` — Reviews, rating, photo upload, AI summary, speech-to-text, share, analytics.
+- `useReviews` — Reviews, rating, photo upload, AI summary, speech-to-text, share, analytics. All calls to `/api/summarize` and `/api/notify-owner` attach a Firebase ID token via `Authorization: Bearer <token>`.
 - `useOnboarding` — Owner onboarding form state and `submitVerification` (saves to Firestore/Storage at step 5 only).
 - `useSearch` — Search, cuisine/city/open-now filters, sort, suggestions, PWA install banner.
 - `useToast` — Toast queue.
 
 ### API Routes
 
-- `app/api/summarize/route.js` — Calls Anthropic Claude API (`claude-sonnet-4-20250514`) to generate AI review summaries. Free users get a 2–3 sentence summary; Pro users get a structured analytics report.
-- `app/api/create-checkout-route.js` — Creates Stripe Checkout sessions for Basic ($20/mo) and Pro ($30/mo) subscriptions with 7-day trial.
-- `app/api/webhook/route.js` — Stripe webhook handler; writes subscription status/plan to `subscriptions/{userId}` in Firestore via Admin SDK.
-- `app/api/notify-owner/route.js` — Sends email notification to owner when a new review is posted.
+All non-webhook API routes require a valid Firebase ID token in the `Authorization: Bearer <token>` header. Requests without a valid token receive a 401.
+
+- `app/api/summarize/route.js` — Calls Anthropic Claude API (`claude-sonnet-4-20250514`) to generate AI review summaries. **`isPro` is determined server-side** by checking `subscriptions/{uid}` in Firestore — the client does not supply it. Free users get a 2–3 sentence summary; Pro users get a structured analytics report. Enforces input length limits.
+- `app/api/create-checkout/route.js` — Creates Stripe Checkout sessions for Basic ($20/mo) and Pro ($30/mo) subscriptions with 7-day trial. Validates that `userId` matches the authenticated token's UID, and validates `plan` against a whitelist (`basic`, `pro`).
+- `app/api/webhook/route.js` — Stripe webhook handler; verifies Stripe signature, writes subscription status/plan to `subscriptions/{userId}` in Firestore via Admin SDK. No auth token required (called by Stripe).
+- `app/api/notify-owner/route.js` — Sends email notification to owner when a new review is posted. Validates `rating` against the allowed enum and caps `reviewText` at 2000 chars. All user content is HTML-escaped before being embedded in the email.
+- `app/api/admin/update-status/route.js` — Server-side admin endpoint for approving/rejecting verification requests. Verifies Firebase token AND checks `users/{uid}.role === 'admin'` in Firestore before allowing any write. Validates `status` against `['approved', 'rejected', 'pending']`.
 
 ### Firebase
 
 - `app/lib/firebase.js` — Client SDK: exports `auth`, `db`, `storage`, `googleProvider`. Auth is Google Sign-In only.
-- `app/lib/firebase-admin.js` — Admin SDK: used only in server-side API routes (webhook). Requires service account env vars.
+- `app/lib/firebase-admin.js` — Admin SDK: exports `adminDb` (Firestore) and `adminAuth` (Auth). Used only in server-side API routes. Requires service account env vars.
+- `app/lib/auth-helpers.js` — `verifyToken(request)` helper: extracts and verifies the Firebase ID token from the `Authorization: Bearer` header using `adminAuth.verifyIdToken()`. Returns `{ uid }` on success or `{ uid: null }` on failure.
 
 ### Firestore collections
 
 - `restaurants` — Restaurant documents (name, city, cuisine, address, hours, halal cert info, etc.)
-- `reviews` — Reviews subcollection or top-level, keyed by restaurantId
+- `reviews` — Reviews top-level collection, keyed by restaurantId. Requires a composite index on `(restaurantId ASC, createdAt DESC)` — create via Firebase Console if missing.
 - `users` — User profiles; `role` is `customer`, `owner`, or `admin`
-- `subscriptions` — Subscription status per userId, written by webhook
+- `subscriptions` — Subscription status per userId, written by Stripe webhook
 - `verification_requests` — Halal verification submissions from restaurant owners (with proof documents, cert details)
 - `favourites` — Per-user favourited restaurant IDs
 
@@ -132,7 +136,9 @@ Copy `.env.local.example` to `.env.local`. Required variables:
 | `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` | Firebase Console → Service Accounts → Generate private key |
 | `ANTHROPIC_API_KEY` | console.anthropic.com |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`, `STRIPE_PRO_PRICE_ID` | Stripe Dashboard |
-| `NEXT_PUBLIC_APP_URL` | Base URL (e.g. `http://localhost:3000`) |
+| `NEXT_PUBLIC_APP_URL` | Base URL (e.g. `http://localhost:3007`) |
+| `RESEND_API_KEY` | resend.com |
+| `RESEND_FROM_EMAIL` | Sender address (e.g. `HalalSpot <notifications@yourdomain.com>`) |
 
 ---
 
@@ -142,7 +148,10 @@ Copy `.env.local.example` to `.env.local`. Required variables:
 - Rating values are `recommended`, `good`, `average`, `not_recommended` — not numeric stars.
 - Stripe webhook must receive the raw request body (not parsed JSON) for signature verification — `route.js` uses `request.text()`.
 - `FIREBASE_PRIVATE_KEY` in `.env.local` must have literal `\n` replaced with actual newlines, or the Admin SDK init will fail. The `firebase-admin.js` handles this with `.replace(/\\n/g, '\n')`.
-- Firestore indexes may need to be created manually — the browser console will show a link to create them if a compound query fails.
+- Firestore composite index required on `reviews` collection: `(restaurantId ASC, createdAt DESC)`. Create it via the link in the browser console error if missing.
 - `submitVerification` in `useOnboarding` only writes to Firestore/Storage when called at step 5 — nothing is saved mid-onboarding.
 - The homepage hero stats section shows trust highlights (icon + label) rather than numeric counts, to avoid inflated/misleading numbers before the platform has real scale.
 - `RolePicker.js` has been deleted — there is no role picker screen. Role is assigned automatically (`customer` by default, `owner` via onboarding).
+- Restaurant images fall back to `CUISINE_IMAGES[cuisine]` then `DEFAULT_FOOD_IMAGE` (both from Unsplash) when no `coverImageUrl` is set on the restaurant document.
+- `next.config.js` sets security headers on all routes: `X-Frame-Options`, `X-Content-Type-Options`, `Strict-Transport-Security`, `Referrer-Policy`, `Permissions-Policy`, and a `Content-Security-Policy`. When adding new external scripts or connect targets, update the CSP in `next.config.js`.
+- The dev server runs on port **3007** (`next dev -p 3007`).

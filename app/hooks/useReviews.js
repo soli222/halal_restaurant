@@ -88,10 +88,15 @@ export function useReviews(user, selected, showToast, setReviewStats) {
         const newTotal = current.totalScore + _score;
         return { ...prev, [selected.id]: { count: newCount, totalScore: newTotal, avg: Math.round((newTotal / newCount) * 10) / 10 } };
       });
-      fetch('/api/notify-owner', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ restaurantId: selected.id, rating, reviewText }),
+      user.getIdToken().then(token => {
+        fetch('/api/notify-owner', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ restaurantId: selected.id, rating, reviewText }),
+        });
       }).catch(() => {});
       const r = await fetchReviews(selected.id);
       setReviews(r);
@@ -128,10 +133,14 @@ export function useReviews(user, selected, showToast, setReviewStats) {
     setLoadingSummary(true);
     const reviewsText = reviews.map(r => `[${r.rating}] ${r.text}`).join('\n');
     try {
+      const token = await user.getIdToken();
       const res = await fetch('/api/summarize', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reviews: reviewsText, restaurant: selected.name, isPro: false }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reviews: reviewsText, restaurant: selected.name }),
       });
       const data = await res.json();
       setAiSummary(data.summary);
@@ -144,10 +153,14 @@ export function useReviews(user, selected, showToast, setReviewStats) {
     setLoadingAdvanced(true);
     const reviewsText = reviews.map(r => `[${r.rating}] ${r.text}`).join('\n');
     try {
+      const token = await user.getIdToken();
       const res = await fetch('/api/summarize', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reviews: reviewsText, restaurant: selected.name, isPro: true }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reviews: reviewsText, restaurant: selected.name }),
       });
       const data = await res.json();
       setAdvancedSummary(data.summary);

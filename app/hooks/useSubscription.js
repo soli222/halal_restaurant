@@ -29,13 +29,21 @@ export function useSubscription(user, handleLogin, showToast) {
     if (!user) return handleLogin();
     setLoadingSub(true);
     try {
+      const token = await user.getIdToken();
       const res = await fetch('/api/create-checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ userId: user.uid, email: user.email, plan }),
       });
       const data = await res.json();
-      window.location.href = data.url;
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        showToast('Something went wrong. Please try again.', 'error');
+      }
     } catch (e) { showToast('Something went wrong. Please try again.', 'error'); }
     setLoadingSub(false);
   }

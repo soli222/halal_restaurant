@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
-  collection, query, orderBy, getDocs, doc, getDoc, setDoc
+  collection, query, orderBy, getDocs, doc, getDoc
 } from 'firebase/firestore';
 
 function isImageUrl(url) {
@@ -94,8 +94,19 @@ export default function AdminPage() {
   async function updateStatus(reqId, status) {
     setActionLoading(prev => ({ ...prev, [reqId]: true }));
     try {
-      await setDoc(doc(db, 'verification_requests', reqId), { status }, { merge: true });
-      setRequests(prev => prev.map(r => r.id === reqId ? { ...r, status } : r));
+      const token = await user.getIdToken();
+      const res = await fetch('/api/admin/update-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reqId, status }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setRequests(prev => prev.map(r => r.id === reqId ? { ...r, status } : r));
+      }
     } catch (_) {}
     setActionLoading(prev => ({ ...prev, [reqId]: false }));
   }

@@ -46,6 +46,7 @@ export function useAuth(showToast) {
   async function handleLogin() {
     try { await signInWithPopup(auth, googleProvider); }
     catch (e) {
+      console.error('Sign in error:', e.code, e.message);
       if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
         showToast('Sign in failed. Please try again.', 'error');
       }
@@ -58,6 +59,8 @@ export function useAuth(showToast) {
 
   async function handleRoleSelect(role) {
     if (!user) return;
+    // Only allow safe roles — prevent self-elevation to admin
+    if (!['customer', 'owner'].includes(role)) return;
     await setDoc(doc(db, 'users', user.uid), { role }, { merge: true });
     setUserRole(role);
   }

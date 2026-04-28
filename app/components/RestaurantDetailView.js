@@ -12,6 +12,7 @@ export default function RestaurantDetailView({
   handleLogin,
   handleLogout,
   setView,
+  setSelected,
   userRole,
   isSubscribed,
   isPro,
@@ -56,7 +57,7 @@ export default function RestaurantDetailView({
       {/* Header */}
       <header className="bg-[#050505]/90 backdrop-blur-sm border-b border-white/[0.06] px-5 py-4 flex items-center justify-between sticky top-0 z-10">
         <button
-          onClick={() => setView('home')}
+          onClick={() => { setSelected(null); setView('home'); }}
           className="flex items-center gap-1.5 text-sm font-medium text-gray-300 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-all duration-200"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

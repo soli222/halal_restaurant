@@ -287,6 +287,7 @@ export default function Home() {
     return (
       <RestaurantDetailView
         selected={selected}
+        setSelected={setSelected}
         toasts={toasts}
         user={user}
         handleLogin={handleLogin}
