@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
-  collection, query, orderBy, getDocs, doc, getDoc
+  collection, query, orderBy, getDocs, doc, getDoc, updateDoc,
 } from 'firebase/firestore';
 
 function isImageUrl(url) {
@@ -53,13 +53,30 @@ function FilePreview({ url, label }) {
   );
 }
 
+const REPORT_REASON_LABELS = {
+  spam: 'Spam',
+  fake_review: 'Fake review',
+  inappropriate: 'Inappropriate',
+  other: 'Other',
+};
+
+const REPORT_STATUS_STYLES = {
+  pending: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
+  resolved: 'bg-green-500/10 text-green-400 border border-green-500/20',
+  dismissed: 'bg-white/5 text-gray-500 border border-white/10',
+};
+
 export default function AdminPage() {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loadingAuth, setLoadingAuth] = useState(true);
+  const [activeTab, setActiveTab] = useState('verifications');
   const [requests, setRequests] = useState([]);
   const [loadingReqs, setLoadingReqs] = useState(false);
   const [actionLoading, setActionLoading] = useState({});
+  const [reports, setReports] = useState([]);
+  const [loadingReports, setLoadingReports] = useState(false);
+  const [reportActionLoading, setReportActionLoading] = useState({});
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -78,7 +95,7 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (isAdmin) fetchRequests();
+    if (isAdmin) { fetchRequests(); fetchReports(); }
   }, [isAdmin]);
 
   async function fetchRequests() {
@@ -89,6 +106,25 @@ export default function AdminPage() {
       setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (_) {}
     setLoadingReqs(false);
+  }
+
+  async function fetchReports() {
+    setLoadingReports(true);
+    try {
+      const q = query(collection(db, 'reports'), orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      setReports(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (_) {}
+    setLoadingReports(false);
+  }
+
+  async function updateReportStatus(reportId, status) {
+    setReportActionLoading(prev => ({ ...prev, [reportId]: true }));
+    try {
+      await updateDoc(doc(db, 'reports', reportId), { status });
+      setReports(prev => prev.map(r => r.id === reportId ? { ...r, status } : r));
+    } catch (_) {}
+    setReportActionLoading(prev => ({ ...prev, [reportId]: false }));
   }
 
   async function updateStatus(reqId, status) {
@@ -135,32 +171,53 @@ export default function AdminPage() {
       <div className="max-w-3xl mx-auto px-4 py-10 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-white">Verification Requests</h1>
-            <p className="text-gray-500 text-sm mt-0.5">{requests.length} submission{requests.length !== 1 ? 's' : ''}</p>
-          </div>
+          <h1 className="text-xl font-bold text-white">Admin</h1>
           <button
-            onClick={fetchRequests}
-            disabled={loadingReqs}
+            onClick={() => activeTab === 'verifications' ? fetchRequests() : fetchReports()}
+            disabled={loadingReqs || loadingReports}
             className="text-xs text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-colors"
           >
-            {loadingReqs ? 'Refreshing…' : 'Refresh'}
+            {(loadingReqs || loadingReports) ? 'Refreshing…' : 'Refresh'}
           </button>
         </div>
 
-        {loadingReqs && requests.length === 0 && (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 border-2 border-green-500/40 border-t-green-500 rounded-full animate-spin" />
-          </div>
+        {/* Tabs */}
+        <div className="flex gap-1 bg-white/5 p-1 rounded-xl">
+          {[
+            { id: 'verifications', label: `Verifications (${requests.length})` },
+            { id: 'reports', label: `Reports (${reports.filter(r => r.status === 'pending').length})` },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${
+                activeTab === tab.id
+                  ? 'bg-[#1a1a1a] text-white'
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Verifications tab */}
+        {activeTab === 'verifications' && (
+          <>
+            {loadingReqs && requests.length === 0 && (
+              <div className="flex items-center justify-center py-16">
+                <div className="w-6 h-6 border-2 border-green-500/40 border-t-green-500 rounded-full animate-spin" />
+              </div>
+            )}
+            {!loadingReqs && requests.length === 0 && (
+              <div className="bg-[#111111] border border-white/5 rounded-2xl p-12 text-center">
+                <p className="text-gray-400 font-medium">No verification requests yet</p>
+              </div>
+            )}
+          </>
         )}
 
-        {!loadingReqs && requests.length === 0 && (
-          <div className="bg-[#111111] border border-white/5 rounded-2xl p-12 text-center">
-            <p className="text-gray-400 font-medium">No verification requests yet</p>
-          </div>
-        )}
-
-        {requests.map(req => (
+        {activeTab === 'verifications' && requests.map(req => (
           <div key={req.id} className="bg-[#111111] border border-white/5 rounded-2xl p-6 space-y-5">
             {/* Owner info + status */}
             <div className="flex items-start justify-between gap-4">
@@ -297,6 +354,64 @@ export default function AdminPage() {
             </div>
           </div>
         ))}
+
+        {/* Reports tab */}
+        {activeTab === 'reports' && (
+          <>
+            {loadingReports && reports.length === 0 && (
+              <div className="flex items-center justify-center py-16">
+                <div className="w-6 h-6 border-2 border-green-500/40 border-t-green-500 rounded-full animate-spin" />
+              </div>
+            )}
+            {!loadingReports && reports.length === 0 && (
+              <div className="bg-[#111111] border border-white/5 rounded-2xl p-12 text-center">
+                <p className="text-gray-400 font-medium">No reports yet</p>
+              </div>
+            )}
+            {reports.map(report => (
+              <div key={report.id} className="bg-[#111111] border border-white/5 rounded-2xl p-6 space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="font-semibold text-white text-sm">{report.restaurantName}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/5 text-gray-400 border border-white/10">
+                        {REPORT_REASON_LABELS[report.reason] ?? report.reason}
+                      </span>
+                      <span className="text-xs text-gray-600">
+                        {report.createdAt?.toDate?.()?.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) ?? 'Date unknown'}
+                      </span>
+                    </div>
+                  </div>
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0 ${REPORT_STATUS_STYLES[report.status] ?? REPORT_STATUS_STYLES.pending}`}>
+                    {report.status ?? 'pending'}
+                  </span>
+                </div>
+                {report.reviewText && (
+                  <div className="bg-[#0D0D0D] border border-white/[0.06] rounded-xl px-4 py-3">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Review excerpt</p>
+                    <p className="text-sm text-gray-300 leading-relaxed">{report.reviewText}</p>
+                  </div>
+                )}
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={() => updateReportStatus(report.id, 'resolved')}
+                    disabled={report.status === 'resolved' || reportActionLoading[report.id]}
+                    className="bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 text-sm font-medium px-4 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {reportActionLoading[report.id] ? '…' : 'Resolve'}
+                  </button>
+                  <button
+                    onClick={() => updateReportStatus(report.id, 'dismissed')}
+                    disabled={report.status === 'dismissed' || reportActionLoading[report.id]}
+                    className="bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 text-sm font-medium px-4 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {reportActionLoading[report.id] ? '…' : 'Dismiss'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );

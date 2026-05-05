@@ -8,6 +8,44 @@ import {
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { DEFAULT_HOURS } from '../constants';
 
+function computeAnalyticsStats(items, reviewCount) {
+  const now = new Date();
+  const msPerDay = 86400000;
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  const startOfThisWeek = new Date(now - now.getDay() * msPerDay);
+  startOfThisWeek.setHours(0, 0, 0, 0);
+  const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  // Build last-14-days map
+  const dayMap = {};
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(now - i * msPerDay);
+    d.setHours(0, 0, 0, 0);
+    dayMap[d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })] = 0;
+  }
+
+  let total = items.length;
+  let today = 0, thisWeek = 0, thisMonth = 0, authenticated = 0;
+
+  items.forEach(item => {
+    const d = item.viewedAt?.toDate?.();
+    if (!d) return;
+    if (d >= startOfToday) today++;
+    if (d >= startOfThisWeek) thisWeek++;
+    if (d >= startOfThisMonth) thisMonth++;
+    if (item.isAuthenticated) authenticated++;
+    const key = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (key in dayMap) dayMap[key]++;
+  });
+
+  const days = Object.entries(dayMap).map(([label, count]) => ({ label, count }));
+  const conversionRate = total > 0 ? ((reviewCount / total) * 100).toFixed(1) : '0.0';
+  const signedInRate = total > 0 ? Math.round((authenticated / total) * 100) : 0;
+
+  return { total, today, thisWeek, thisMonth, days, conversionRate, signedInRate };
+}
+
 export function useOwnerDashboard(showToast) {
   const [uid, setUid] = useState(null);
   const [verificationRequest, setVerificationRequest] = useState(null);
@@ -23,6 +61,7 @@ export function useOwnerDashboard(showToast) {
   const [editMapsUrl, setEditMapsUrl] = useState('');
   const [coverImageFile, setCoverImageFile] = useState(null);
   const [coverImagePreview, setCoverImagePreview] = useState('');
+  const [analyticsStats, setAnalyticsStats] = useState(null);
 
   async function fetchDashboardData(userId) {
     setUid(userId);
@@ -54,6 +93,7 @@ export function useOwnerDashboard(showToast) {
         setLinkedRestaurant(rest);
 
         if (rest) {
+          let reviewCount = 0;
           try {
             const revSnap = await getDocs(
               query(
@@ -63,9 +103,30 @@ export function useOwnerDashboard(showToast) {
                 limit(5)
               )
             );
-            setDashboardReviews(revSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+            const revDocs = revSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setDashboardReviews(revDocs);
+            // Fetch total review count for conversion rate
+            const allRevSnap = await getDocs(
+              query(collection(db, 'reviews'), where('restaurantId', '==', rest.id))
+            );
+            reviewCount = allRevSnap.size;
           } catch {
             // Composite index may not exist yet — skip reviews silently
+          }
+
+          // Fetch analytics for this restaurant
+          try {
+            const analyticsSnap = await getDocs(
+              query(
+                collection(db, 'analytics'),
+                where('restaurantId', '==', rest.id),
+                limit(2000)
+              )
+            );
+            const items = analyticsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setAnalyticsStats(computeAnalyticsStats(items, reviewCount));
+          } catch {
+            // Analytics collection may not exist yet
           }
         }
       } else {
@@ -144,5 +205,6 @@ export function useOwnerDashboard(showToast) {
     coverImageFile, coverImagePreview,
     handleCoverChange,
     fetchDashboardData, saveProfile,
+    analyticsStats,
   };
 }

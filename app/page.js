@@ -17,6 +17,7 @@ import PricingView from './components/PricingView';
 import RestaurantDetailView from './components/RestaurantDetailView';
 import HomeView from './components/HomeView';
 import { useOwnerDashboard } from './hooks/useOwnerDashboard';
+import { useNotifications } from './hooks/useNotifications';
 
 export default function Home() {
   const [view, setView] = useState('home');
@@ -70,13 +71,14 @@ export default function Home() {
     submittingReply,
     isListening, speechSupported,
     handlePhotoChange, toggleListening,
-    submitReview, submitReply,
+    submitReview, submitReply, submitReport,
     generateSummary, generateAdvancedSummary,
     shareRestaurant, getAnalytics, ratingCount,
   } = useReviews(user, selected, showToast, setReviewStats);
 
   const onboarding = useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserRole);
   const ownerDashboard = useOwnerDashboard(showToast);
+  const { notifications, unreadCount, markAllRead } = useNotifications(user);
 
   const {
     search, setSearch,
@@ -263,10 +265,14 @@ export default function Home() {
         coverImagePreview={ownerDashboard.coverImagePreview}
         handleCoverChange={ownerDashboard.handleCoverChange}
         saveProfile={ownerDashboard.saveProfile}
+        analyticsStats={ownerDashboard.analyticsStats}
         handleLogout={handleLogout}
         setView={setView}
         handleSubscribe={handleSubscribe}
         loadingSub={loadingSub}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        markAllRead={markAllRead}
       />
     );
   }
@@ -323,6 +329,7 @@ export default function Home() {
         toggleListening={toggleListening}
         submitReview={submitReview}
         submitReply={submitReply}
+        submitReport={submitReport}
         generateSummary={generateSummary}
         generateAdvancedSummary={generateAdvancedSummary}
         shareRestaurant={shareRestaurant}
@@ -337,6 +344,7 @@ export default function Home() {
     <HomeView
       user={user}
       userRole={userRole}
+      onboardingComplete={onboardingComplete}
       handleLogin={handleHeaderLogin}
       handleLogout={handleLogout}
       onStartOwnerOnboarding={() => setOwnerStep(1)}

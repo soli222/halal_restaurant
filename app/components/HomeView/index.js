@@ -4,7 +4,7 @@ import { getOpenStatus, certExpiryStatus, formatTime } from '../../utils/restaur
 
 export default function HomeView({
   // Auth
-  user, userRole,
+  user, userRole, onboardingComplete,
   handleLogin, handleLogout,
   onStartOwnerOnboarding,
   onOwnerSignIn,
@@ -119,7 +119,7 @@ export default function HomeView({
         <div className="h-px w-full" style={{ background: 'linear-gradient(to right, transparent, rgba(34,197,94,0.3), transparent)', boxShadow: '0 0 8px rgba(34,197,94,0.2)' }} />
 
         {/* Informational sections — shown to customers and logged-out visitors */}
-        {!selected && (!user || userRole === 'customer') && (
+        {!selected && (!user || userRole === 'customer' || (userRole === 'owner' && !onboardingComplete)) && (
           <div className="space-y-10">
             {/* How HalalSpot Works */}
             <div className="space-y-5">

@@ -113,7 +113,8 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserR
       setMapsUrl('');
       setConfirmOwnership(false);
     } catch (e) {
-      setVerifyError('Upload failed. Please try again.');
+      console.error('submitVerification error:', e?.code, e?.message, e);
+      setVerifyError(`Upload failed: ${e?.message || 'Please try again.'}`);
       showToast('Upload failed. Please try again.', 'error');
     }
     setVerifyLoading(false);

@@ -64,6 +64,14 @@ export function useRestaurants(user, setView, showToast) {
     setAdvancedSummary('');
     const r = await fetchReviews(rest.id);
     setReviews(r);
+    // Log page view to analytics — fire and forget
+    addDoc(collection(db, 'analytics'), {
+      restaurantId: rest.id,
+      restaurantName: rest.name,
+      viewedAt: serverTimestamp(),
+      userId: user?.uid || null,
+      isAuthenticated: !!user,
+    }).catch(() => {});
     try {
       const prev = JSON.parse(localStorage.getItem('halalspot_recent') || '[]');
       const updated = [rest.id, ...prev.filter(id => id !== rest.id)].slice(0, 5);

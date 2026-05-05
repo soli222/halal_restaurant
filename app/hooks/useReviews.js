@@ -61,7 +61,7 @@ export function useReviews(user, selected, showToast, setReviewStats) {
         await uploadBytes(photoRef, photo);
         photoUrl = await getDownloadURL(photoRef);
       }
-      await addDoc(collection(db, 'reviews'), {
+      const reviewRef = await addDoc(collection(db, 'reviews'), {
         restaurantId: selected.id,
         restaurantName: selected.name,
         userId: user.uid,
@@ -74,6 +74,17 @@ export function useReviews(user, selected, showToast, setReviewStats) {
         photoUrl,
         createdAt: serverTimestamp(),
       });
+      // Notify the restaurant owner of the new review
+      if (selected.ownerId) {
+        addDoc(collection(db, 'notifications', selected.ownerId, 'items'), {
+          type: 'new_review',
+          message: `New ${rating.replace('_', ' ')} review posted for ${selected.name}.`,
+          read: false,
+          restaurantId: selected.id,
+          reviewId: reviewRef.id,
+          createdAt: serverTimestamp(),
+        }).catch(() => {});
+      }
       setReviewText('');
       setRating('recommended');
       setCertVisible(null);
@@ -179,6 +190,23 @@ export function useReviews(user, selected, showToast, setReviewStats) {
     }
   }
 
+  async function submitReport(reviewId, reason) {
+    if (!user) return;
+    const review = reviews.find(r => r.id === reviewId);
+    try {
+      await addDoc(collection(db, 'reports'), {
+        reviewId,
+        restaurantId: selected.id,
+        restaurantName: selected.name,
+        reportedBy: user.uid,
+        reason,
+        reviewText: (review?.text || '').slice(0, 300),
+        status: 'pending',
+        createdAt: serverTimestamp(),
+      });
+    } catch (_) {}
+  }
+
   function ratingCount(val) { return reviews.filter(r => r.rating === val).length; }
 
   function getAnalytics() {
@@ -228,7 +256,7 @@ export function useReviews(user, selected, showToast, setReviewStats) {
     submittingReply,
     isListening, speechSupported,
     handlePhotoChange, toggleListening,
-    submitReview, submitReply,
+    submitReview, submitReply, submitReport,
     generateSummary, generateAdvancedSummary,
     shareRestaurant, getAnalytics, ratingCount,
   };

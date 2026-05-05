@@ -24,6 +24,62 @@ export async function POST(request) {
     }
 
     await adminDb.collection('verification_requests').doc(reqId).set({ status }, { merge: true });
+
+    // Auto-create restaurant listing on approval
+    if (status === 'approved') {
+      const reqSnap = await adminDb.collection('verification_requests').doc(reqId).get();
+      const req = reqSnap.data();
+      if (req) {
+        // Check if a restaurant already exists for this owner to avoid duplicates
+        const existing = await adminDb.collection('restaurants')
+          .where('ownerId', '==', reqId)
+          .limit(1)
+          .get();
+        if (existing.empty) {
+          await adminDb.collection('restaurants').add({
+            name: req.businessName || '',
+            city: req.ownerCity || '',
+            cuisine: req.cuisineType || '',
+            ownerId: reqId,
+            certifyingBody: req.certifyingBody || null,
+            certificationNumber: req.certificationNumber || null,
+            certExpiryDate: req.certExpiryDate || null,
+            halalCertificateUrl: req.halalCertificateUrl || null,
+            businessLicenseUrl: req.businessLicenseUrl || null,
+            healthPermitUrl: req.healthPermitUrl || null,
+            websiteUrl: req.websiteUrl || null,
+            mapsUrl: req.mapsUrl || null,
+            coverImageUrl: req.coverImageUrl || null,
+            description: req.description || null,
+            hours: req.hours || null,
+            verified: true,
+            createdAt: new Date(),
+          });
+        }
+      }
+    }
+
+    // Notify the owner — reqId is the owner's userId for verification_requests
+    const notifMessage =
+      status === 'approved'
+        ? 'Your restaurant verification has been approved! Your listing is now live.'
+        : status === 'rejected'
+        ? 'Your restaurant verification was not approved. Please contact support@halalspot.com for more info.'
+        : null;
+    if (notifMessage) {
+      adminDb
+        .collection('notifications')
+        .doc(reqId)
+        .collection('items')
+        .add({
+          type: status === 'approved' ? 'verification_approved' : 'verification_rejected',
+          message: notifMessage,
+          read: false,
+          createdAt: new Date(),
+        })
+        .catch(() => {});
+    }
+
     return Response.json({ ok: true });
   } catch (err) {
     console.error('admin update-status error:', err);

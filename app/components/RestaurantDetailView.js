@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Toast from './Toast';
 import { RATING_OPTIONS, RATING_STYLES, DAYS } from '../constants';
@@ -33,16 +34,31 @@ export default function RestaurantDetailView({
   toggleListening,
   submitReview,
   submitReply,
+  submitReport,
   generateSummary,
   generateAdvancedSummary,
   shareRestaurant,
   getAnalytics,
   ratingCount,
 }) {
+  const [reportingReview, setReportingReview] = useState(null);
+  const [reportReason, setReportReason] = useState('spam');
+  const [submittingReport, setSubmittingReport] = useState(false);
+  const [reportedIds, setReportedIds] = useState(new Set());
+
   const subscribed = isSubscribed();
   const pro = isPro();
   const analytics = subscribed ? getAnalytics() : null;
   const maxDayCount = analytics ? Math.max(...analytics.days.map(d => d.count), 1) : 1;
+
+  async function handleSubmitReport(reviewId) {
+    setSubmittingReport(true);
+    await submitReport(reviewId, reportReason);
+    setReportedIds(prev => new Set([...prev, reviewId]));
+    setReportingReview(null);
+    setReportReason('spam');
+    setSubmittingReport(false);
+  }
 
   return (
     <div className="min-h-screen bg-[#050505] text-gray-100 relative overflow-x-hidden">
@@ -622,6 +638,61 @@ export default function RestaurantDetailView({
                         <button
                           onClick={() => { setReplyingTo(null); setReplyText(''); }}
                           disabled={submittingReply}
+                          className="text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-200"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {/* Report button — visible to logged-in users who didn't write the review */}
+                  {user && r.userId !== user.uid && reportingReview !== r.id && (
+                    <div className="mt-2 pl-10">
+                      {reportedIds.has(r.id) ? (
+                        <span className="text-xs text-gray-600">Reported</span>
+                      ) : (
+                        <button
+                          onClick={() => { setReportingReview(r.id); setReportReason('spam'); }}
+                          className="text-xs text-gray-600 hover:text-red-400 transition-colors duration-200"
+                        >
+                          Report
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {reportingReview === r.id && (
+                    <div className="mt-3 ml-10 space-y-2">
+                      <p className="text-xs text-gray-500">Why are you reporting this review?</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { value: 'spam', label: 'Spam' },
+                          { value: 'fake_review', label: 'Fake review' },
+                          { value: 'inappropriate', label: 'Inappropriate' },
+                          { value: 'other', label: 'Other' },
+                        ].map(opt => (
+                          <button
+                            key={opt.value}
+                            onClick={() => setReportReason(opt.value)}
+                            className={`px-3 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${
+                              reportReason === opt.value
+                                ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                : 'bg-white/5 text-gray-500 border border-white/10 hover:bg-white/10'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleSubmitReport(r.id)}
+                          disabled={submittingReport}
+                          className="bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 font-semibold px-3 py-1.5 rounded-lg text-xs transition-all duration-200 disabled:opacity-50"
+                        >
+                          {submittingReport ? 'Submitting...' : 'Submit report'}
+                        </button>
+                        <button
+                          onClick={() => setReportingReview(null)}
                           className="text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-200"
                         >
                           Cancel
