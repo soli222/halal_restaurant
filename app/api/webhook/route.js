@@ -23,6 +23,13 @@ export async function POST(request) {
 
     if (userId) {
       const priceId = subscription.items?.data?.[0]?.price?.id;
+      const knownPriceIds = [process.env.STRIPE_PRICE_ID, process.env.STRIPE_PRO_PRICE_ID].filter(Boolean);
+
+      if (!priceId || !knownPriceIds.includes(priceId)) {
+        console.error('Webhook: unrecognised priceId', priceId, '— skipping subscription write');
+        return Response.json({ received: true });
+      }
+
       const plan = priceId === process.env.STRIPE_PRO_PRICE_ID ? 'pro' : 'basic';
 
       await adminDb.collection('subscriptions').doc(userId).set({

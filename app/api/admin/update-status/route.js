@@ -25,18 +25,18 @@ export async function POST(request) {
 
     await adminDb.collection('verification_requests').doc(reqId).set({ status }, { merge: true });
 
-    // Auto-create restaurant listing on approval
+    // Auto-create restaurant listing on approval (transactional to prevent duplicates)
     if (status === 'approved') {
       const reqSnap = await adminDb.collection('verification_requests').doc(reqId).get();
       const req = reqSnap.data();
       if (req) {
-        // Check if a restaurant already exists for this owner to avoid duplicates
-        const existing = await adminDb.collection('restaurants')
-          .where('ownerId', '==', reqId)
-          .limit(1)
-          .get();
-        if (existing.empty) {
-          await adminDb.collection('restaurants').add({
+        await adminDb.runTransaction(async (tx) => {
+          const existing = await tx.get(
+            adminDb.collection('restaurants').where('ownerId', '==', reqId).limit(1)
+          );
+          if (!existing.empty) return; // Already created — idempotent
+          const newRestRef = adminDb.collection('restaurants').doc();
+          tx.set(newRestRef, {
             name: req.businessName || '',
             city: req.ownerCity || '',
             cuisine: req.cuisineType || '',
@@ -55,7 +55,7 @@ export async function POST(request) {
             verified: true,
             createdAt: new Date(),
           });
-        }
+        });
       }
     }
 
