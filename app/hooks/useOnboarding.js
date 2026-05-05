@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { db, storage } from '../lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { DEFAULT_HOURS } from '../constants';
 
@@ -81,7 +81,8 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserR
       await setDoc(doc(db, 'users', user.uid), { role: 'owner' }, { merge: true });
       if (setUserRole) setUserRole('owner');
 
-      await setDoc(doc(db, 'verification_requests', user.uid), {
+      await addDoc(collection(db, 'verification_requests'), {
+        ownerId: user.uid,
         userId: user.uid,
         userName: user.displayName || '',
         userEmail: user.email || '',

@@ -11,7 +11,6 @@ import { useOnboarding } from './hooks/useOnboarding';
 import { useSearch } from './hooks/useSearch';
 
 import OwnerOnboarding from './components/OwnerOnboarding';
-import PostOnboardingSubscription from './components/PostOnboardingSubscription';
 import OwnerDashboard from './components/OwnerDashboard';
 import PricingView from './components/PricingView';
 import RestaurantDetailView from './components/RestaurantDetailView';
@@ -36,9 +35,9 @@ export default function Home() {
   } = useAuth(showToast);
 
   const {
-    subscription, loadingSub,
+    subscription, loadingSub, upgradingToPro, cancellingSubscription,
     fetchSubscription,
-    isSubscribed, isPro, handleSubscribe,
+    isSubscribed, isPro, handleSubscribe, handleUpgrade, handleCancel,
   } = useSubscription(user, handleLogin, showToast);
 
   const { favourites, fetchFavourites, toggleFavourite } = useFavourites(user, handleLogin);
@@ -133,6 +132,15 @@ export default function Home() {
     }
   }, [user?.uid]);
 
+  // After onboarding submission, skip PostOnboardingSubscription and go straight to dashboard
+  useEffect(() => {
+    if (ownerStep !== 'subscription' || !user) return;
+    completeOnboarding();
+    ownerDashboard.fetchDashboardData(user.uid);
+    setView('owner-dashboard');
+    setOwnerStep(null);
+  }, [ownerStep, user]);
+
   // Redirect to dashboard after "Already listed? Sign in" button triggers sign-in
   useEffect(() => {
     if (!pendingOwnerDashboard || !user || !userRole) return;
@@ -175,6 +183,11 @@ export default function Home() {
     handleLogin();
   }
 
+  // "Add another restaurant" from owner dashboard — re-enters onboarding flow
+  function handleAddRestaurant() {
+    setOwnerStep(1);
+  }
+
   function handleShowPricing() {
     if (!user) return handleLogin();
     setView('pricing');
@@ -186,7 +199,7 @@ export default function Home() {
   }
 
   // ─── OWNER ONBOARDING ────────────────────────────────────────────────────
-  if (ownerStep !== null && ownerStep !== 'subscription' && !(user && onboardingComplete)) {
+  if (ownerStep !== null && ownerStep !== 'subscription') {
     return (
       <OwnerOnboarding
         ownerStep={ownerStep}
@@ -229,17 +242,6 @@ export default function Home() {
     );
   }
 
-  // ─── POST-ONBOARDING SUBSCRIPTION ────────────────────────────────────────
-  if (user && ownerStep === 'subscription') {
-    return (
-      <PostOnboardingSubscription
-        handleSubscribe={handleSubscribe}
-        loadingSub={loadingSub}
-        completeOnboarding={() => { completeOnboarding(); setOwnerStep(null); ownerDashboard.fetchDashboardData(user.uid); setView('owner-dashboard'); }}
-      />
-    );
-  }
-
   // ─── OWNER DASHBOARD ─────────────────────────────────────────────────────────
   if (view === 'owner-dashboard' && user && userRole === 'owner') {
     return (
@@ -269,10 +271,18 @@ export default function Home() {
         handleLogout={handleLogout}
         setView={setView}
         handleSubscribe={handleSubscribe}
+        handleUpgrade={handleUpgrade}
+        handleCancel={handleCancel}
         loadingSub={loadingSub}
+        upgradingToPro={upgradingToPro}
+        cancellingSubscription={cancellingSubscription}
         notifications={notifications}
         unreadCount={unreadCount}
         markAllRead={markAllRead}
+        allLinkedRestaurants={ownerDashboard.allLinkedRestaurants}
+        activeIndex={ownerDashboard.activeIndex}
+        onSwitchRestaurant={ownerDashboard.switchRestaurant}
+        onAddRestaurant={handleAddRestaurant}
       />
     );
   }
@@ -344,7 +354,6 @@ export default function Home() {
     <HomeView
       user={user}
       userRole={userRole}
-      onboardingComplete={onboardingComplete}
       handleLogin={handleHeaderLogin}
       handleLogout={handleLogout}
       onStartOwnerOnboarding={() => setOwnerStep(1)}
@@ -362,32 +371,6 @@ export default function Home() {
       openRestaurant={rest => openRestaurant(rest, setReviews, setAiSummary, setAdvancedSummary)}
       favourites={favourites}
       toggleFavourite={toggleFavourite}
-      addingRestaurant={addingRestaurant}
-      setAddingRestaurant={setAddingRestaurant}
-      newRestName={newRestName}
-      setNewRestName={setNewRestName}
-      newRestLocation={newRestLocation}
-      setNewRestLocation={setNewRestLocation}
-      newCertNumber={newCertNumber}
-      setNewCertNumber={setNewCertNumber}
-      coverPhotoFile={onboarding.coverPhotoFile}
-      setCoverPhotoFile={onboarding.setCoverPhotoFile}
-      coverPhotoPreview={onboarding.coverPhotoPreview}
-      setCoverPhotoPreview={onboarding.setCoverPhotoPreview}
-      hoursInput={onboarding.hoursInput}
-      setHoursInput={onboarding.setHoursInput}
-      addRestaurant={() => addRestaurant({
-        coverPhotoFile: onboarding.coverPhotoFile,
-        hoursInput: onboarding.hoursInput,
-        setCoverPhotoFile: onboarding.setCoverPhotoFile,
-        setCoverPhotoPreview: onboarding.setCoverPhotoPreview,
-        setHoursInput: onboarding.setHoursInput,
-      })}
-      loadingSub={loadingSub}
-      isSubscribed={isSubscribed}
-      isPro={isPro}
-      subscription={subscription}
-      handleShowPricing={handleShowPricing}
       search={search}
       setSearch={setSearch}
       cuisineFilter={cuisineFilter}

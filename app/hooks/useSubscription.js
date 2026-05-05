@@ -5,6 +5,8 @@ import { doc, getDoc } from 'firebase/firestore';
 export function useSubscription(user, handleLogin, showToast) {
   const [subscription, setSubscription] = useState(null);
   const [loadingSub, setLoadingSub] = useState(false);
+  const [upgradingToPro, setUpgradingToPro] = useState(false);
+  const [cancellingSubscription, setCancellingSubscription] = useState(false);
 
   async function fetchSubscription(userId) {
     setLoadingSub(true);
@@ -48,5 +50,49 @@ export function useSubscription(user, handleLogin, showToast) {
     setLoadingSub(false);
   }
 
-  return { subscription, loadingSub, fetchSubscription, isSubscribed, isPro, handleSubscribe };
+  async function handleUpgrade() {
+    if (!user) return;
+    setUpgradingToPro(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch('/api/upgrade-subscription', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showToast('Upgrade scheduled! Your Pro plan begins at the next billing date.');
+        await fetchSubscription(user.uid);
+      } else {
+        showToast(data.error || 'Upgrade failed. Please try again.', 'error');
+      }
+    } catch (e) {
+      showToast('Upgrade failed. Please try again.', 'error');
+    }
+    setUpgradingToPro(false);
+  }
+
+  async function handleCancel() {
+    if (!user) return;
+    setCancellingSubscription(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch('/api/cancel-subscription', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showToast('Subscription cancelled — you keep access until your billing period ends.');
+        await fetchSubscription(user.uid);
+      } else {
+        showToast(data.error || 'Cancellation failed. Please try again.', 'error');
+      }
+    } catch (e) {
+      showToast('Cancellation failed. Please try again.', 'error');
+    }
+    setCancellingSubscription(false);
+  }
+
+  return { subscription, loadingSub, upgradingToPro, cancellingSubscription, fetchSubscription, isSubscribed, isPro, handleSubscribe, handleUpgrade, handleCancel };
 }

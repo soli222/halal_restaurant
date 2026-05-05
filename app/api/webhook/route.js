@@ -35,8 +35,12 @@ export async function POST(request) {
       await adminDb.collection('subscriptions').doc(userId).set({
         status: subscription.status,
         plan,
-        amount: plan === 'pro' ? 3000 : 2000,
+        amount: plan === 'pro' ? 4000 : 3000,
         stripeSubscriptionId: subscription.id,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end ?? false,
+        currentPeriodEnd: subscription.current_period_end
+          ? new Date(subscription.current_period_end * 1000).toISOString()
+          : null,
         updatedAt: new Date().toISOString(),
       }, { merge: true });
     }
@@ -47,9 +51,11 @@ export async function POST(request) {
     const userId = subscription.metadata?.userId;
 
     if (userId) {
+      const now = new Date().toISOString();
       await adminDb.collection('subscriptions').doc(userId).set({
         status: 'canceled',
-        updatedAt: new Date().toISOString(),
+        cancelledAt: now,
+        updatedAt: now,
       }, { merge: true });
     }
   }

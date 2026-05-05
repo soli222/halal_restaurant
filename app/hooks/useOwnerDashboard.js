@@ -48,13 +48,16 @@ function computeAnalyticsStats(items, reviewCount) {
 
 export function useOwnerDashboard(showToast) {
   const [uid, setUid] = useState(null);
+  const [allVerificationRequests, setAllVerificationRequests] = useState([]);
+  const [allLinkedRestaurants, setAllLinkedRestaurants] = useState([]);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [verificationRequest, setVerificationRequest] = useState(null);
   const [linkedRestaurant, setLinkedRestaurant] = useState(null);
   const [dashboardReviews, setDashboardReviews] = useState([]);
   const [loadingDashboard, setLoadingDashboard] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // Editable fields — seeded from verificationRequest when data loads
+  // Editable fields — seeded from active verificationRequest when data loads
   const [editDescription, setEditDescription] = useState('');
   const [editHours, setEditHours] = useState(DEFAULT_HOURS);
   const [editWebsiteUrl, setEditWebsiteUrl] = useState('');
@@ -63,75 +66,113 @@ export function useOwnerDashboard(showToast) {
   const [coverImagePreview, setCoverImagePreview] = useState('');
   const [analyticsStats, setAnalyticsStats] = useState(null);
 
+  // Load reviews + analytics for the given restaurant and update state
+  async function loadRestaurantData(rest) {
+    if (!rest) {
+      setDashboardReviews([]);
+      setAnalyticsStats(null);
+      return;
+    }
+    let reviewCount = 0;
+    try {
+      const revSnap = await getDocs(
+        query(
+          collection(db, 'reviews'),
+          where('restaurantId', '==', rest.id),
+          orderBy('createdAt', 'desc'),
+          limit(5)
+        )
+      );
+      setDashboardReviews(revSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const allRevSnap = await getDocs(
+        query(collection(db, 'reviews'), where('restaurantId', '==', rest.id))
+      );
+      reviewCount = allRevSnap.size;
+    } catch {
+      // Composite index may not exist yet — skip reviews silently
+    }
+    try {
+      const analyticsSnap = await getDocs(
+        query(
+          collection(db, 'analytics'),
+          where('restaurantId', '==', rest.id),
+          limit(2000)
+        )
+      );
+      setAnalyticsStats(computeAnalyticsStats(
+        analyticsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+        reviewCount
+      ));
+    } catch {
+      // Analytics collection may not exist yet
+    }
+  }
+
+  // Seed editable fields from a verification request doc
+  function seedEditFields(req) {
+    setVerificationRequest(req);
+    setEditDescription(req.description || '');
+    setEditHours(req.hours || DEFAULT_HOURS);
+    setEditWebsiteUrl(req.websiteUrl || '');
+    setEditMapsUrl(req.mapsUrl || '');
+    setCoverImagePreview(req.coverImageUrl || '');
+    setCoverImageFile(null);
+  }
+
   async function fetchDashboardData(userId) {
     setUid(userId);
     setLoadingDashboard(true);
     try {
-      const snap = await getDoc(doc(db, 'verification_requests', userId));
-      if (snap.exists()) {
-        const data = snap.data();
-        setVerificationRequest(data);
-        setEditDescription(data.description || '');
-        setEditHours(data.hours || DEFAULT_HOURS);
-        setEditWebsiteUrl(data.websiteUrl || '');
-        setEditMapsUrl(data.mapsUrl || '');
-        if (data.coverImageUrl) setCoverImagePreview(data.coverImageUrl);
+      // New-style: verification_requests have an ownerId field (addDoc-based)
+      let reqs = [];
+      const newStyleSnap = await getDocs(
+        query(collection(db, 'verification_requests'), where('ownerId', '==', userId))
+      );
+      reqs = newStyleSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-        // Find the linked restaurant: ownerId query first, name match as fallback
-        let rest = null;
-        const byOwner = await getDocs(
-          query(collection(db, 'restaurants'), where('ownerId', '==', userId), limit(1))
-        );
-        if (!byOwner.empty) {
-          rest = { id: byOwner.docs[0].id, ...byOwner.docs[0].data() };
-        } else if (data.businessName) {
-          const byName = await getDocs(
-            query(collection(db, 'restaurants'), where('name', '==', data.businessName), limit(1))
-          );
-          if (!byName.empty) rest = { id: byName.docs[0].id, ...byName.docs[0].data() };
+      // Backward compat: old-style doc keyed by userId (setDoc-based)
+      if (reqs.length === 0) {
+        const oldStyleSnap = await getDoc(doc(db, 'verification_requests', userId));
+        if (oldStyleSnap.exists()) {
+          reqs = [{ id: userId, ...oldStyleSnap.data() }];
         }
-        setLinkedRestaurant(rest);
-
-        if (rest) {
-          let reviewCount = 0;
-          try {
-            const revSnap = await getDocs(
-              query(
-                collection(db, 'reviews'),
-                where('restaurantId', '==', rest.id),
-                orderBy('createdAt', 'desc'),
-                limit(5)
-              )
-            );
-            const revDocs = revSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-            setDashboardReviews(revDocs);
-            // Fetch total review count for conversion rate
-            const allRevSnap = await getDocs(
-              query(collection(db, 'reviews'), where('restaurantId', '==', rest.id))
-            );
-            reviewCount = allRevSnap.size;
-          } catch {
-            // Composite index may not exist yet — skip reviews silently
-          }
-
-          // Fetch analytics for this restaurant
-          try {
-            const analyticsSnap = await getDocs(
-              query(
-                collection(db, 'analytics'),
-                where('restaurantId', '==', rest.id),
-                limit(2000)
-              )
-            );
-            const items = analyticsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-            setAnalyticsStats(computeAnalyticsStats(items, reviewCount));
-          } catch {
-            // Analytics collection may not exist yet
-          }
-        }
-      } else {
-        setVerificationRequest(null);
       }
+
+      setAllVerificationRequests(reqs);
+
+      if (reqs.length === 0) {
+        setVerificationRequest(null);
+        setLinkedRestaurant(null);
+        setAllLinkedRestaurants([]);
+        setDashboardReviews([]);
+        setAnalyticsStats(null);
+        return;
+      }
+
+      // Get all restaurants belonging to this owner
+      const restsSnap = await getDocs(
+        query(collection(db, 'restaurants'), where('ownerId', '==', userId), limit(20))
+      );
+      const allRests = restsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Match each verification request to its restaurant
+      const matched = reqs.map(req => {
+        // New style: linked via verificationRequestId
+        let rest = allRests.find(r => r.verificationRequestId === req.id);
+        // Fallback for old-style or name-only matching
+        if (!rest && req.businessName) {
+          rest = allRests.find(r => r.name === req.businessName);
+        }
+        return rest || null;
+      });
+      setAllLinkedRestaurants(matched);
+
+      // Activate the first request
+      setActiveIndex(0);
+      seedEditFields(reqs[0]);
+      setLinkedRestaurant(matched[0]);
+      await loadRestaurantData(matched[0]);
+
     } catch {
       showToast('Failed to load dashboard.', 'error');
     } finally {
@@ -139,11 +180,21 @@ export function useOwnerDashboard(showToast) {
     }
   }
 
+  async function switchRestaurant(index) {
+    if (index < 0 || index >= allVerificationRequests.length) return;
+    setActiveIndex(index);
+    const req = allVerificationRequests[index];
+    const rest = allLinkedRestaurants[index];
+    seedEditFields(req);
+    setLinkedRestaurant(rest);
+    await loadRestaurantData(rest);
+  }
+
   async function saveProfile() {
-    if (!uid) return;
+    if (!uid || !verificationRequest) return;
     setSavingProfile(true);
     try {
-      let coverImageUrl = verificationRequest?.coverImageUrl || null;
+      let coverImageUrl = verificationRequest.coverImageUrl || null;
       if (coverImageFile) {
         const r = storageRef(storage, `owner_covers/${uid}/${Date.now()}_${coverImageFile.name}`);
         await uploadBytes(r, coverImageFile);
@@ -157,12 +208,20 @@ export function useOwnerDashboard(showToast) {
         websiteUrl: editWebsiteUrl.trim() || null,
         mapsUrl: editMapsUrl.trim() || null,
         updatedAt: serverTimestamp(),
-        ...(coverImageUrl !== verificationRequest?.coverImageUrl ? { coverImageUrl } : {}),
+        ...(coverImageUrl !== verificationRequest.coverImageUrl ? { coverImageUrl } : {}),
       };
 
-      await setDoc(doc(db, 'verification_requests', uid), updates, { merge: true });
-      setVerificationRequest(prev => ({ ...prev, ...updates }));
-      if (coverImageUrl && coverImageUrl !== verificationRequest?.coverImageUrl) {
+      // Use the document ID from the verificationRequest object (works for both old and new style)
+      await setDoc(doc(db, 'verification_requests', verificationRequest.id), updates, { merge: true });
+      const updatedReq = { ...verificationRequest, ...updates };
+      setVerificationRequest(updatedReq);
+
+      // Keep allVerificationRequests in sync
+      setAllVerificationRequests(prev =>
+        prev.map(r => r.id === verificationRequest.id ? updatedReq : r)
+      );
+
+      if (coverImageUrl && coverImageUrl !== verificationRequest.coverImageUrl) {
         setCoverImagePreview(coverImageUrl);
       }
 
@@ -172,10 +231,14 @@ export function useOwnerDashboard(showToast) {
           hours: editHours,
           websiteUrl: editWebsiteUrl.trim() || null,
           mapsUrl: editMapsUrl.trim() || null,
-          ...(coverImageUrl !== verificationRequest?.coverImageUrl ? { coverImageUrl } : {}),
+          ...(coverImageUrl !== verificationRequest.coverImageUrl ? { coverImageUrl } : {}),
         };
         await updateDoc(doc(db, 'restaurants', linkedRestaurant.id), restUpdates);
-        setLinkedRestaurant(prev => ({ ...prev, ...restUpdates }));
+        const updatedRest = { ...linkedRestaurant, ...restUpdates };
+        setLinkedRestaurant(updatedRest);
+        setAllLinkedRestaurants(prev =>
+          prev.map(r => r?.id === linkedRestaurant.id ? updatedRest : r)
+        );
       }
 
       showToast('Profile saved!');
@@ -196,6 +259,7 @@ export function useOwnerDashboard(showToast) {
   }
 
   return {
+    allVerificationRequests, allLinkedRestaurants, activeIndex,
     verificationRequest, linkedRestaurant, dashboardReviews,
     loadingDashboard, savingProfile,
     editDescription, setEditDescription,
@@ -204,7 +268,7 @@ export function useOwnerDashboard(showToast) {
     editMapsUrl, setEditMapsUrl,
     coverImageFile, coverImagePreview,
     handleCoverChange,
-    fetchDashboardData, saveProfile,
+    fetchDashboardData, saveProfile, switchRestaurant,
     analyticsStats,
   };
 }

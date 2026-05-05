@@ -30,9 +30,11 @@ export async function POST(request) {
       const reqSnap = await adminDb.collection('verification_requests').doc(reqId).get();
       const req = reqSnap.data();
       if (req) {
+        // ownerId is the actual user ID (from new-style addDoc requests or old-style doc-keyed requests)
+        const ownerId = req.ownerId || reqId;
         await adminDb.runTransaction(async (tx) => {
           const existing = await tx.get(
-            adminDb.collection('restaurants').where('ownerId', '==', reqId).limit(1)
+            adminDb.collection('restaurants').where('verificationRequestId', '==', reqId).limit(1)
           );
           if (!existing.empty) return; // Already created — idempotent
           const newRestRef = adminDb.collection('restaurants').doc();
@@ -40,7 +42,8 @@ export async function POST(request) {
             name: req.businessName || '',
             city: req.ownerCity || '',
             cuisine: req.cuisineType || '',
-            ownerId: reqId,
+            ownerId,
+            verificationRequestId: reqId,
             certifyingBody: req.certifyingBody || null,
             certificationNumber: req.certificationNumber || null,
             certExpiryDate: req.certExpiryDate || null,
@@ -59,7 +62,11 @@ export async function POST(request) {
       }
     }
 
-    // Notify the owner — reqId is the owner's userId for verification_requests
+    // Notify the owner — use ownerId field if available, fall back to reqId for old-style docs
+    const reqSnapForNotif = await adminDb.collection('verification_requests').doc(reqId).get();
+    const reqDataForNotif = reqSnapForNotif.data();
+    const notifTargetUid = reqDataForNotif?.ownerId || reqId;
+
     const notifMessage =
       status === 'approved'
         ? 'Your restaurant verification has been approved! Your listing is now live.'
@@ -69,7 +76,7 @@ export async function POST(request) {
     if (notifMessage) {
       adminDb
         .collection('notifications')
-        .doc(reqId)
+        .doc(notifTargetUid)
         .collection('items')
         .add({
           type: status === 'approved' ? 'verification_approved' : 'verification_rejected',

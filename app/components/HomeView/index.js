@@ -1,10 +1,10 @@
 import Toast from '../Toast';
-import { CUISINES, CUISINE_IMAGES, DEFAULT_FOOD_IMAGE, DAYS, DEFAULT_HOURS } from '../../constants';
+import { CUISINES, CUISINE_IMAGES, DEFAULT_FOOD_IMAGE } from '../../constants';
 import { getOpenStatus, certExpiryStatus, formatTime } from '../../utils/restaurant';
 
 export default function HomeView({
   // Auth
-  user, userRole, onboardingComplete,
+  user, userRole,
   handleLogin, handleLogout,
   onStartOwnerOnboarding,
   onOwnerSignIn,
@@ -17,18 +17,6 @@ export default function HomeView({
   topRated, recentRestaurants,
   openRestaurant,
   favourites, toggleFavourite,
-  // Add restaurant form
-  addingRestaurant, setAddingRestaurant,
-  newRestName, setNewRestName,
-  newRestLocation, setNewRestLocation,
-  newCertNumber, setNewCertNumber,
-  coverPhotoFile, setCoverPhotoFile,
-  coverPhotoPreview, setCoverPhotoPreview,
-  hoursInput, setHoursInput,
-  addRestaurant,
-  // Subscription
-  loadingSub, isSubscribed, isPro, subscription,
-  handleShowPricing,
   // Search & filters
   search, setSearch,
   cuisineFilter, setCuisineFilter,
@@ -118,8 +106,8 @@ export default function HomeView({
         </div>
         <div className="h-px w-full" style={{ background: 'linear-gradient(to right, transparent, rgba(34,197,94,0.3), transparent)', boxShadow: '0 0 8px rgba(34,197,94,0.2)' }} />
 
-        {/* Informational sections — shown to customers and logged-out visitors */}
-        {!selected && (!user || userRole === 'customer' || (userRole === 'owner' && !onboardingComplete)) && (
+        {/* Informational sections — shown to customers and logged-out visitors only */}
+        {!selected && (!user || userRole === 'customer') && (
           <div className="space-y-10">
             {/* How HalalSpot Works */}
             <div className="space-y-5">
@@ -346,116 +334,6 @@ export default function HomeView({
             {showAllCuisines ? 'Less −' : 'More +'}
           </button>
         </div>
-
-        {/* Owner section: trial badge + add restaurant */}
-        {user && userRole !== 'customer' && (
-          <div className="space-y-3">
-            {!loadingSub && isSubscribed() && subscription?.status === 'trialing' && (
-              <div className="bg-green-500/10 border border-green-500/20 rounded-2xl px-4 py-3 flex items-center gap-2.5">
-                <span className="text-base">✅</span>
-                <p className="text-green-400 text-sm font-medium">Free trial active — enjoy HalalSpot {isPro() ? 'Pro' : 'Basic'}!</p>
-              </div>
-            )}
-            {!addingRestaurant ? (
-              <button
-                onClick={() => setAddingRestaurant(true)}
-                className="flex items-center gap-1.5 text-sm font-medium text-green-400 hover:text-green-300 transition-all duration-200"
-              >
-                <span className="text-base leading-none font-bold">+</span>
-                Add a restaurant
-              </button>
-            ) : !isSubscribed() ? (
-              <div className="relative overflow-hidden rounded-2xl border border-green-500/20">
-                <div className="absolute inset-0 bg-gradient-to-r from-green-500/15 via-green-500/5 to-transparent pointer-events-none" />
-                <div className="relative px-5 py-5 space-y-3">
-                  <div>
-                    <p className="text-green-300 font-semibold text-sm">Start your free trial to add your restaurant</p>
-                    <p className="text-green-400/60 text-xs mt-1">7 days free, then from $30/month. Cancel anytime.</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleShowPricing}
-                      className="bg-green-500 hover:bg-green-600 active:scale-95 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all duration-200 shadow-lg shadow-green-500/20"
-                    >
-                      Get started →
-                    </button>
-                    <button
-                      onClick={() => setAddingRestaurant(false)}
-                      className="text-sm text-gray-400 hover:text-white px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-[#111111] rounded-2xl p-5 border border-white/5 space-y-3">
-                <h3 className="text-sm font-semibold text-white">Add restaurant</h3>
-                <input value={newRestName} onChange={e => setNewRestName(e.target.value)} placeholder="Restaurant name" className="w-full bg-[#1A1A1A] rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200" />
-                <input value={newRestLocation} onChange={e => setNewRestLocation(e.target.value)} placeholder="Location (e.g. Dallas, TX)" className="w-full bg-[#1A1A1A] rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200" />
-                <input value={newCertNumber} onChange={e => setNewCertNumber(e.target.value)} placeholder="Halal certification number (optional)" className="w-full bg-[#1A1A1A] rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200" />
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1.5">Cover photo <span className="text-gray-600">(optional)</span></label>
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <div className="flex items-center gap-2 bg-[#1A1A1A] border border-white/10 hover:border-green-500/30 rounded-xl px-4 py-2.5 transition-all duration-200">
-                      <svg className="w-4 h-4 text-gray-500 group-hover:text-green-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span className="text-xs text-gray-500 group-hover:text-gray-300 transition-colors">
-                        {coverPhotoFile ? coverPhotoFile.name : 'Upload cover photo'}
-                      </span>
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={e => {
-                        const file = e.target.files[0];
-                        if (file) { setCoverPhotoFile(file); setCoverPhotoPreview(URL.createObjectURL(file)); }
-                      }}
-                    />
-                  </label>
-                  {coverPhotoPreview && (
-                    <img src={coverPhotoPreview} alt="Cover preview" className="mt-2 h-24 w-full object-cover rounded-xl border border-white/10" />
-                  )}
-                </div>
-                {/* Business hours */}
-                <div className="space-y-2">
-                  <label className="block text-xs text-gray-500">Business hours</label>
-                  <div className="space-y-1.5">
-                    {DAYS.map(({ key, label }) => (
-                      <div key={key} className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500 w-8 flex-shrink-0">{label}</span>
-                        {hoursInput[key].closed ? (
-                          <span className="flex-1 text-xs text-gray-600 italic">Closed</span>
-                        ) : (
-                          <div className="flex items-center gap-1.5 flex-1">
-                            <input type="time" value={hoursInput[key].open} onChange={e => setHoursInput(prev => ({ ...prev, [key]: { ...prev[key], open: e.target.value } }))} className="bg-[#1A1A1A] border border-white/10 rounded-lg px-2 py-1 text-xs text-gray-300 focus:outline-none focus:border-green-500/40 w-24" />
-                            <span className="text-gray-600 text-xs">–</span>
-                            <input type="time" value={hoursInput[key].close} onChange={e => setHoursInput(prev => ({ ...prev, [key]: { ...prev[key], close: e.target.value } }))} className="bg-[#1A1A1A] border border-white/10 rounded-lg px-2 py-1 text-xs text-gray-300 focus:outline-none focus:border-green-500/40 w-24" />
-                          </div>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => setHoursInput(prev => ({ ...prev, [key]: { ...prev[key], closed: !prev[key].closed } }))}
-                          className={`text-[10px] font-medium px-2 py-1 rounded-lg transition-all duration-200 flex-shrink-0 ${
-                            hoursInput[key].closed ? 'bg-red-500/15 text-red-400 border border-red-500/20' : 'bg-white/5 text-gray-500 border border-white/10 hover:text-gray-300'
-                          }`}
-                        >
-                          {hoursInput[key].closed ? 'Closed' : 'Set closed'}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={addRestaurant} className="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-all duration-200">Add</button>
-                  <button onClick={() => setAddingRestaurant(false)} className="text-sm text-gray-400 hover:text-white px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200">Cancel</button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Top Rated */}
         {topRated.length > 0 && (

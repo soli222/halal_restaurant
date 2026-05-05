@@ -44,9 +44,20 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Verification requests: owner can read/write their own submission
-    match /verification_requests/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // Verification requests: owner can read their own submissions (by ownerId field).
+    // New requests use addDoc with auto-generated IDs + ownerId field.
+    // Old requests used userId as doc ID — both styles are supported via collection-group read.
+    // Writes: new docs must have ownerId matching the authenticated user.
+    //         updates to existing docs require the stored ownerId to match.
+    match /verification_requests/{reqId} {
+      allow read: if request.auth != null && (
+        resource.data.ownerId == request.auth.uid ||
+        reqId == request.auth.uid
+      );
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
     }
 
     // Notifications: owner can read/write their own notification items

@@ -30,13 +30,22 @@ export default function OwnerDashboard({
   handleLogout,
   setView,
   handleSubscribe,
+  handleUpgrade,
+  handleCancel,
   loadingSub,
+  upgradingToPro,
+  cancellingSubscription = false,
   notifications = [],
   unreadCount = 0,
   markAllRead,
   analyticsStats,
+  allLinkedRestaurants = [],
+  activeIndex = 0,
+  onSwitchRestaurant,
+  onAddRestaurant,
 }) {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const status = verificationRequest?.status;
 
   const certExpiry = verificationRequest?.certExpiryDate;
@@ -159,6 +168,36 @@ export default function OwnerDashboard({
           </div>
         ) : (
           <>
+            {/* Restaurant switcher — shown when owner has multiple listings */}
+            {allLinkedRestaurants.length > 1 && (
+              <div className="bg-[#111111] border border-white/[0.06] rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">My Restaurants</h2>
+                  <button
+                    onClick={onAddRestaurant}
+                    className="text-xs font-medium text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:border-amber-500/60 px-3 py-1.5 rounded-xl transition-all duration-200"
+                  >
+                    + Add another
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {allLinkedRestaurants.map((rest, i) => (
+                    <button
+                      key={i}
+                      onClick={() => onSwitchRestaurant?.(i)}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        i === activeIndex
+                          ? 'bg-amber-500 text-black'
+                          : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/10'
+                      }`}
+                    >
+                      {rest?.name || `Restaurant ${i + 1}`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Welcome + Status */}
             <div className="bg-[#111111] border border-white/[0.06] rounded-2xl p-6 space-y-4">
               <div className="flex items-start justify-between gap-4">
@@ -225,14 +264,57 @@ export default function OwnerDashboard({
                     </ul>
                   </div>
                   <button
-                    onClick={() => setView('home')}
+                    onClick={onAddRestaurant}
                     className="w-full bg-amber-500 hover:bg-amber-400 active:scale-95 text-black font-bold px-6 py-3 rounded-xl text-sm transition-all duration-200 shadow-lg shadow-amber-500/20"
                   >
-                    Go to homepage to list my restaurant →
+                    List my restaurant →
                   </button>
                 </div>
               )}
+
+              {/* Add another restaurant — shown when owner already has at least one listing */}
+              {verificationRequest && allLinkedRestaurants.length <= 1 && (
+                <button
+                  onClick={onAddRestaurant}
+                  className="flex items-center gap-2 text-sm font-medium text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:border-amber-500/60 px-4 py-2.5 rounded-xl transition-all duration-200 w-fit"
+                >
+                  <span className="text-base font-bold">+</span>
+                  Add another restaurant
+                </button>
+              )}
+
+              {/* Compact subscription status */}
+              <div className="flex items-center justify-between pt-3 border-t border-white/[0.04]">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-gray-500">Plan</span>
+                  {subscription?.status === 'canceled' ? (
+                    <span className="text-xs font-semibold bg-red-500/15 border border-red-500/30 text-red-400 px-2.5 py-0.5 rounded-full">Cancelled</span>
+                  ) : isPro() ? (
+                    <span className="text-xs font-semibold bg-green-500/15 border border-green-500/30 text-green-400 px-2.5 py-0.5 rounded-full">Pro</span>
+                  ) : isSubscribed() ? (
+                    <span className="text-xs font-semibold bg-white/10 border border-white/10 text-gray-300 px-2.5 py-0.5 rounded-full">Basic</span>
+                  ) : (
+                    <span className="text-xs font-semibold bg-amber-500/15 border border-amber-500/30 text-amber-400 px-2.5 py-0.5 rounded-full">No plan</span>
+                  )}
+                  {subscription?.status === 'active' && !subscription?.cancelAtPeriodEnd && (
+                    <span className="text-xs text-gray-500">· ${((subscription.amount || 0) / 100).toFixed(0)}/mo</span>
+                  )}
+                  {subscription?.status === 'trialing' && !subscription?.cancelAtPeriodEnd && (
+                    <span className="text-xs text-gray-500">· Free trial active</span>
+                  )}
+                  {subscription?.cancelAtPeriodEnd && subscription?.currentPeriodEnd && (
+                    <span className="text-xs text-red-400">· Cancels {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                  )}
+                  {subscription?.status === 'canceled' && (
+                    <span className="text-xs text-gray-600">· Listing hidden</span>
+                  )}
+                </div>
+                <a href="#settings" className="text-xs text-amber-400 hover:text-amber-300 transition-colors flex-shrink-0">
+                  {subscription?.status === 'canceled' ? 'Resubscribe →' : 'Manage billing →'}
+                </a>
+              </div>
             </div>
+
 
             {verificationRequest && (
               <>
@@ -381,50 +463,6 @@ export default function OwnerDashboard({
               </>
             )}
 
-            {/* Subscription */}
-            <div className="bg-[#111111] border border-white/[0.06] rounded-2xl p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-white">Subscription</h2>
-                {isPro ? (
-                  <span className="text-xs font-bold bg-green-500/15 border border-green-500/30 text-green-400 px-3 py-1 rounded-full">Pro</span>
-                ) : isSubscribed ? (
-                  <span className="text-xs font-bold bg-white/10 border border-white/10 text-gray-300 px-3 py-1 rounded-full">Basic</span>
-                ) : (
-                  <span className="text-xs font-bold bg-amber-500/15 border border-amber-500/30 text-amber-400 px-3 py-1 rounded-full">No plan</span>
-                )}
-              </div>
-
-              {subscription?.status === 'trialing' && (
-                <p className="text-sm text-gray-400">🎁 Free trial active — no charge until your trial ends.</p>
-              )}
-              {subscription?.status === 'active' && (
-                <p className="text-sm text-gray-400">
-                  Active — {subscription.plan === 'pro' ? 'Pro' : 'Basic'} plan at ${((subscription.amount || 0) / 100).toFixed(0)}/mo
-                </p>
-              )}
-              {!isSubscribed && (
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-400">Subscribe to get your restaurant listed and respond to reviews.</p>
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      onClick={() => handleSubscribe('basic')}
-                      disabled={loadingSub}
-                      className="text-sm font-semibold text-white bg-white/10 hover:bg-white/20 active:scale-95 px-5 py-2.5 rounded-xl transition-all duration-200 disabled:opacity-50"
-                    >
-                      {loadingSub ? 'Redirecting…' : 'Basic — $30/mo'}
-                    </button>
-                    <button
-                      onClick={() => handleSubscribe('pro')}
-                      disabled={loadingSub}
-                      className="text-sm font-semibold text-white bg-green-500 hover:bg-green-600 active:scale-95 px-5 py-2.5 rounded-xl transition-all duration-200 shadow-lg shadow-green-500/20 disabled:opacity-50"
-                    >
-                      {loadingSub ? 'Redirecting…' : 'Pro — $40/mo'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Analytics */}
             {linkedRestaurant && (
               <div className="bg-[#111111] border border-white/[0.06] rounded-2xl p-6 space-y-5">
@@ -537,6 +575,219 @@ export default function OwnerDashboard({
                 </div>
               </div>
             )}
+
+            {/* Settings */}
+            {(() => {
+              const cancelScheduled = subscription?.cancelAtPeriodEnd;
+              const periodEnd = subscription?.currentPeriodEnd
+                ? new Date(subscription.currentPeriodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : null;
+
+              const isCancelled = subscription?.status === 'canceled';
+              const cancelledAt = subscription?.cancelledAt ? new Date(subscription.cancelledAt) : null;
+              const daysSinceCancelled = cancelledAt ? (Date.now() - cancelledAt.getTime()) / (1000 * 60 * 60 * 24) : null;
+              const showResubscribeOffer = isCancelled && daysSinceCancelled !== null && daysSinceCancelled >= 2;
+
+              return (
+                <div id="settings" className="bg-[#111111] border border-white/[0.06] rounded-2xl p-6 space-y-5">
+                  <h2 className="text-sm font-semibold text-white">Settings</h2>
+
+                  {/* Billing & Subscription subsection */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Billing &amp; Subscription</h3>
+                      {isCancelled ? (
+                        <span className="text-xs font-bold bg-red-500/15 border border-red-500/30 text-red-400 px-3 py-1 rounded-full">Cancelled</span>
+                      ) : isPro() ? (
+                        <span className="text-xs font-bold bg-green-500/15 border border-green-500/30 text-green-400 px-3 py-1 rounded-full">Pro</span>
+                      ) : isSubscribed() ? (
+                        <span className="text-xs font-bold bg-white/10 border border-white/10 text-gray-300 px-3 py-1 rounded-full">Basic</span>
+                      ) : (
+                        <span className="text-xs font-bold bg-amber-500/15 border border-amber-500/30 text-amber-400 px-3 py-1 rounded-full">No plan</span>
+                      )}
+                    </div>
+
+                    {/* Re-subscribe offer — shown 2+ days after cancellation */}
+                    {showResubscribeOffer && (
+                      <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-5 space-y-4">
+                        <div className="flex items-start gap-3">
+                          <span className="text-2xl">👋</span>
+                          <div className="space-y-1">
+                            <p className="text-sm font-semibold text-amber-400">Welcome back — ready to restore your listing?</p>
+                            <p className="text-sm text-gray-400 leading-relaxed">
+                              Your restaurant data is safe with us. Resubscribe to make your listing visible to customers again and regain full access to your dashboard.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            onClick={() => handleSubscribe('basic')}
+                            disabled={loadingSub}
+                            className="text-sm font-semibold text-white bg-white/10 hover:bg-white/20 active:scale-95 px-5 py-2.5 rounded-xl transition-all duration-200 disabled:opacity-50"
+                          >
+                            {loadingSub ? 'Redirecting…' : 'Basic — $30/mo'}
+                          </button>
+                          <button
+                            onClick={() => handleSubscribe('pro')}
+                            disabled={loadingSub}
+                            className="text-sm font-semibold text-black bg-amber-500 hover:bg-amber-400 active:scale-95 px-5 py-2.5 rounded-xl transition-all duration-200 shadow-lg shadow-amber-500/20 disabled:opacity-50"
+                          >
+                            {loadingSub ? 'Redirecting…' : 'Pro — $40/mo'}
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-600">Your previous restaurant profile and reviews will be restored immediately.</p>
+                      </div>
+                    )}
+
+                    {/* Cancelled but within 2-day grace period — data safe message */}
+                    {isCancelled && !showResubscribeOffer && (
+                      <div className="flex items-start gap-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3">
+                        <svg className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-sm text-gray-500">
+                          Your subscription has ended and your listing is currently hidden. Your data is safe — a resubscription option will appear here shortly.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Active billing UI — hidden when cancelled */}
+                    {!isCancelled && (
+                    <>
+
+                    {/* Active / trialing status line */}
+                    {subscription?.status === 'trialing' && !cancelScheduled && (
+                      <p className="text-sm text-gray-400">🎁 Free trial active — no charge until your trial ends.</p>
+                    )}
+                    {subscription?.status === 'active' && !cancelScheduled && (
+                      <p className="text-sm text-gray-400">
+                        Active — {subscription.plan === 'pro' ? 'Pro' : 'Basic'} plan at ${((subscription.amount || 0) / 100).toFixed(0)}/mo
+                      </p>
+                    )}
+
+                    {/* Cancellation scheduled notice */}
+                    {cancelScheduled && periodEnd && (
+                      <div className="flex items-start gap-2.5 bg-red-500/5 border border-red-500/15 rounded-xl px-4 py-3">
+                        <svg className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-sm text-red-400">
+                          Cancellation scheduled — your access continues until <span className="font-semibold">{periodEnd}</span>.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* No subscription — show both plan options */}
+                    {!isSubscribed() && (
+                      <div className="space-y-3">
+                        <p className="text-sm text-gray-400">Subscribe to get your restaurant listed and respond to reviews.</p>
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            onClick={() => handleSubscribe('basic')}
+                            disabled={loadingSub}
+                            className="text-sm font-semibold text-white bg-white/10 hover:bg-white/20 active:scale-95 px-5 py-2.5 rounded-xl transition-all duration-200 disabled:opacity-50"
+                          >
+                            {loadingSub ? 'Redirecting…' : 'Basic — $30/mo'}
+                          </button>
+                          <button
+                            onClick={() => handleSubscribe('pro')}
+                            disabled={loadingSub}
+                            className="text-sm font-semibold text-black bg-amber-500 hover:bg-amber-400 active:scale-95 px-5 py-2.5 rounded-xl transition-all duration-200 shadow-lg shadow-amber-500/20 disabled:opacity-50"
+                          >
+                            {loadingSub ? 'Redirecting…' : 'Pro — $40/mo'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Basic subscriber — offer upgrade to Pro (not shown if cancellation is scheduled) */}
+                    {isSubscribed() && !isPro() && !cancelScheduled && (
+                      <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 space-y-3">
+                        <div className="flex items-start gap-3">
+                          <span className="text-lg">⭐</span>
+                          <div className="space-y-0.5">
+                            <p className="text-sm font-semibold text-amber-400">Upgrade to Pro</p>
+                            <p className="text-xs text-gray-400 leading-relaxed">
+                              Get AI-powered review summaries, advanced analytics, and priority listing. Your upgrade takes effect at the start of your next billing cycle — no extra charge today.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <button
+                            onClick={handleUpgrade}
+                            disabled={upgradingToPro}
+                            className="bg-amber-500 hover:bg-amber-400 active:scale-95 text-black font-bold px-5 py-2.5 rounded-xl text-sm transition-all duration-200 shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {upgradingToPro ? 'Scheduling upgrade…' : 'Upgrade to Pro — $40/mo'}
+                          </button>
+                          <p className="text-xs text-gray-600">Charged at next renewal</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Pro subscriber — no downgrade option, just status */}
+                    {isPro() && !cancelScheduled && (
+                      <div className="bg-green-500/5 border border-green-500/15 rounded-xl px-4 py-3 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          <p className="text-sm text-green-400 font-medium">You're on Pro — all features unlocked.</p>
+                        </div>
+                        <p className="text-xs text-gray-600 pl-6">Pro is the highest plan. Downgrading to Basic is not available.</p>
+                      </div>
+                    )}
+
+                    {/* Cancel subscription — available to any active subscriber, hidden once cancellation is scheduled */}
+                    {isSubscribed() && !cancelScheduled && (
+                      <div className="pt-2 border-t border-white/[0.04] space-y-3">
+                        {!showCancelConfirm ? (
+                          <button
+                            onClick={() => setShowCancelConfirm(true)}
+                            className="text-xs text-gray-600 hover:text-red-400 transition-colors duration-200"
+                          >
+                            Cancel subscription
+                          </button>
+                        ) : (
+                          <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 space-y-3">
+                            <div className="flex items-start gap-2.5">
+                              <svg className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <div className="space-y-1">
+                                <p className="text-sm font-semibold text-red-400">Are you sure you want to cancel?</p>
+                                <p className="text-xs text-gray-400 leading-relaxed">
+                                  Once your billing period ends, <span className="text-white font-medium">your restaurant listing will be hidden from customers</span> and you will lose access to all dashboard features. You can resubscribe at any time to restore your listing.
+                                </p>
+                                <p className="text-xs text-gray-500">You'll keep full access until the end of your current billing period.</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => { handleCancel(); setShowCancelConfirm(false); }}
+                                disabled={cancellingSubscription}
+                                className="text-xs font-semibold text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 px-4 py-2 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {cancellingSubscription ? 'Cancelling…' : 'Yes, cancel my subscription'}
+                              </button>
+                              <button
+                                onClick={() => setShowCancelConfirm(false)}
+                                className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                              >
+                                Keep my plan
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    </> /* end !isCancelled */
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
           </>
         )}
