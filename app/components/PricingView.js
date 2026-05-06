@@ -58,7 +58,7 @@ export default function PricingView({ setView, handleSubscribe, loadingSub }) {
             <div>
               <p className="text-sm font-medium text-green-400">Pro</p>
               <p className="mt-1">
-                <span className="text-3xl font-bold text-white">$40</span>
+                <span className="text-3xl font-bold text-white">$50</span>
                 <span className="text-gray-500 text-sm">/mo</span>
               </p>
             </div>

@@ -56,7 +56,7 @@ export default function PostOnboardingSubscription({ handleSubscribe, loadingSub
             <div>
               <p className="text-sm font-medium text-green-400">Pro</p>
               <p className="mt-1 flex items-end gap-1">
-                <span className="text-3xl font-bold text-white">$40</span>
+                <span className="text-3xl font-bold text-white">$50</span>
                 <span className="text-gray-500 text-sm pb-0.5">/mo</span>
               </p>
               <p className="text-xs text-green-400 mt-1">7-day free trial included</p>

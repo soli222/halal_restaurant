@@ -26,6 +26,7 @@ export default function Home() {
   const [pendingOwnerDashboard, setPendingOwnerDashboard] = useState(false);
   const pendingSubscriptionReturn = useRef(false);
   const [showNoOwnerModal, setShowNoOwnerModal] = useState(false);
+  const [returningFromStripe, setReturningFromStripe] = useState(false);
 
   const { toasts, showToast } = useToast();
 
@@ -140,6 +141,7 @@ export default function Home() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('subscribed') === '1') {
       pendingSubscriptionReturn.current = true;
+      setReturningFromStripe(true);
       window.history.replaceState({}, '', '/');
     }
   }, []);
@@ -149,6 +151,7 @@ export default function Home() {
     if (!pendingSubscriptionReturn.current || !user || !userRole) return;
     if (userRole !== 'owner') return;
     pendingSubscriptionReturn.current = false;
+    setReturningFromStripe(false);
     completeOnboarding();
     ownerDashboard.fetchDashboardData(user.uid);
     setView('owner-dashboard');
@@ -210,6 +213,16 @@ export default function Home() {
   function handleSignInToSubmit() {
     setPendingOwnerSubmit(true);
     handleLogin();
+  }
+
+  // ─── STRIPE RETURN LOADING SCREEN ────────────────────────────────────────
+  if (returningFromStripe) {
+    return (
+      <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center gap-4">
+        <div className="w-10 h-10 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin" />
+        <p className="text-gray-400 text-sm">Setting up your dashboard…</p>
+      </div>
+    );
   }
 
   // ─── OWNER ONBOARDING ────────────────────────────────────────────────────

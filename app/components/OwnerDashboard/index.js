@@ -633,7 +633,7 @@ export default function OwnerDashboard({
                             disabled={loadingSub}
                             className="text-sm font-semibold text-black bg-amber-500 hover:bg-amber-400 active:scale-95 px-5 py-2.5 rounded-xl transition-all duration-200 shadow-lg shadow-amber-500/20 disabled:opacity-50"
                           >
-                            {loadingSub ? 'Redirecting…' : 'Pro — $40/mo'}
+                            {loadingSub ? 'Redirecting…' : 'Pro — $50/mo'}
                           </button>
                         </div>
                         <p className="text-xs text-gray-600">Your previous restaurant profile and reviews will be restored immediately.</p>
@@ -695,7 +695,7 @@ export default function OwnerDashboard({
                             disabled={loadingSub}
                             className="text-sm font-semibold text-black bg-amber-500 hover:bg-amber-400 active:scale-95 px-5 py-2.5 rounded-xl transition-all duration-200 shadow-lg shadow-amber-500/20 disabled:opacity-50"
                           >
-                            {loadingSub ? 'Redirecting…' : 'Pro — $40/mo'}
+                            {loadingSub ? 'Redirecting…' : 'Pro — $50/mo'}
                           </button>
                         </div>
                       </div>
@@ -719,7 +719,7 @@ export default function OwnerDashboard({
                             disabled={upgradingToPro}
                             className="bg-amber-500 hover:bg-amber-400 active:scale-95 text-black font-bold px-5 py-2.5 rounded-xl text-sm transition-all duration-200 shadow-lg shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {upgradingToPro ? 'Scheduling upgrade…' : 'Upgrade to Pro — $40/mo'}
+                            {upgradingToPro ? 'Scheduling upgrade…' : 'Upgrade to Pro — $50/mo'}
                           </button>
                           <p className="text-xs text-gray-600">Charged at next renewal</p>
                         </div>

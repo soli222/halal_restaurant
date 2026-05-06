@@ -8,7 +8,28 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3007/)",
       "Bash(git add:*)",
       "Bash(git commit -m ':*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(netstat -ano)",
+      "Bash(xargs -I{} taskkill /F /PID {})",
+      "Bash(taskkill /F /PID 20708)",
+      "Bash(taskkill /F /PID 35552)",
+      "Bash(taskkill /F /PID 20708 /T)",
+      "Bash(taskkill /F /PID 35552 /T)",
+      "Bash(cmd /c \"taskkill /F /PID 20708 /T\")",
+      "Bash(cmd /c \"taskkill /F /PID 35552 /T\")",
+      "Bash(ls C:/Users/sohai/projects/halal_restaurant/*.mjs)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(xargs -I {} taskkill /PID {} /F)",
+      "Bash(taskkill /PID 16596 /F)",
+      "Bash(taskkill:*)",
+      "Bash(git commit:*)",
+      "Bash(grep -E \"^[^d].*\\\\.\\(js|ts|json\\)$\")",
+      "Bash(grep -E \"\\\\.js$\")",
+      "Bash(node:*)",
+      "Bash(findstr :3007)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3007)",
+      "Bash(stripe:*)"
     ]
   }
 }

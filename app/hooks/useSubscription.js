@@ -23,8 +23,8 @@ export function useSubscription(user, handleLogin, showToast) {
 
   function isPro() {
     if (!subscription) return false;
-    // Pro plan amount is 4000 cents ($40). Basic is 3000 cents ($30).
-    return subscription.plan === 'pro' || subscription.amount === 4000;
+    // Pro plan amount is 5000 cents ($50). Basic is 3000 cents ($30).
+    return subscription.plan === 'pro' || subscription.amount === 5000;
   }
 
   async function handleSubscribe(plan) {

@@ -339,7 +339,7 @@ export default function RestaurantDetailView({
                     onClick={() => setView('pricing')}
                     className="bg-green-500 hover:bg-green-600 active:scale-95 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all duration-200 shadow-lg shadow-green-500/20"
                   >
-                    Upgrade to Pro — $40/mo
+                    Upgrade to Pro — $50/mo
                   </button>
                 </div>
               </div>
@@ -406,7 +406,7 @@ export default function RestaurantDetailView({
                     onClick={() => setView('pricing')}
                     className="bg-green-500 hover:bg-green-600 active:scale-95 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all duration-200 shadow-lg shadow-green-500/20"
                   >
-                    Upgrade to Pro — $40/mo
+                    Upgrade to Pro — $50/mo
                   </button>
                 </div>
               </div>

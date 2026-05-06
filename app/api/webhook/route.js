@@ -35,7 +35,7 @@ export async function POST(request) {
       await adminDb.collection('subscriptions').doc(userId).set({
         status: subscription.status,
         plan,
-        amount: plan === 'pro' ? 4000 : 3000,
+        amount: plan === 'pro' ? 5000 : 3000,
         stripeSubscriptionId: subscription.id,
         cancelAtPeriodEnd: subscription.cancel_at_period_end ?? false,
         currentPeriodEnd: subscription.current_period_end
