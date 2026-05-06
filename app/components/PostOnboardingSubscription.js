@@ -7,7 +7,7 @@ export default function PostOnboardingSubscription({ handleSubscribe, loadingSub
           <div className="text-5xl">🎉</div>
           <h2 className="text-2xl font-bold text-white">Verification Submitted!</h2>
           <p className="text-gray-400 text-sm max-w-sm mx-auto leading-relaxed">
-            Our team will review your submission within 1–2 business days.
+            Our team will review your submission within 7 business days.
             In the meantime, choose a plan to start your free trial.
           </p>
         </div>
@@ -81,15 +81,9 @@ export default function PostOnboardingSubscription({ handleSubscribe, loadingSub
           </div>
         </div>
 
-        {/* Skip */}
-        <div className="text-center">
-          <button
-            onClick={completeOnboarding}
-            className="text-sm text-gray-500 hover:text-gray-300 underline underline-offset-2 transition-colors"
-          >
-            Skip for now, I'll decide later
-          </button>
-        </div>
+        <p className="text-center text-xs text-gray-600">
+          A plan is required to activate your listing. Your 7-day free trial starts today — you won't be charged until it ends.
+        </p>
       </main>
     </div>
   );

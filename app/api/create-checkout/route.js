@@ -39,7 +39,7 @@ export async function POST(request) {
         metadata: { userId },
       },
       metadata: { userId },
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/?subscribed=1`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/`,
     });
 

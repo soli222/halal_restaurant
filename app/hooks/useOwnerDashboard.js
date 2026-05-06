@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { db, storage } from '../lib/firebase';
+import { moderateImage } from '../lib/moderate-image';
 import {
   doc, getDoc, setDoc, updateDoc, getDocs,
   collection, query, where, orderBy, limit,
@@ -46,7 +47,7 @@ function computeAnalyticsStats(items, reviewCount) {
   return { total, today, thisWeek, thisMonth, days, conversionRate, signedInRate };
 }
 
-export function useOwnerDashboard(showToast) {
+export function useOwnerDashboard(showToast, user) {
   const [uid, setUid] = useState(null);
   const [allVerificationRequests, setAllVerificationRequests] = useState([]);
   const [allLinkedRestaurants, setAllLinkedRestaurants] = useState([]);
@@ -64,6 +65,7 @@ export function useOwnerDashboard(showToast) {
   const [editMapsUrl, setEditMapsUrl] = useState('');
   const [coverImageFile, setCoverImageFile] = useState(null);
   const [coverImagePreview, setCoverImagePreview] = useState('');
+  const [moderatingCover, setModeratingCover] = useState(false);
   const [analyticsStats, setAnalyticsStats] = useState(null);
 
   // Load reviews + analytics for the given restaurant and update state
@@ -249,11 +251,29 @@ export function useOwnerDashboard(showToast) {
     }
   }
 
-  function handleCoverChange(e) {
+  async function handleCoverChange(e) {
     const file = e.target.files[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) { showToast('Please upload an image.', 'error'); return; }
     if (file.size > 5 * 1024 * 1024) { showToast('Image must be under 5MB.', 'error'); return; }
+
+    setModeratingCover(true);
+    try {
+      const token = await user.getIdToken();
+      const { safe, reason } = await moderateImage(file, token);
+      if (!safe) {
+        showToast(
+          reason
+            ? `Image rejected: ${reason}. Please upload an appropriate restaurant photo.`
+            : 'This image isn\'t allowed on HalalSpot. Please upload an appropriate restaurant photo.',
+          'error'
+        );
+        return;
+      }
+    } finally {
+      setModeratingCover(false);
+    }
+
     setCoverImageFile(file);
     setCoverImagePreview(URL.createObjectURL(file));
   }
@@ -266,7 +286,7 @@ export function useOwnerDashboard(showToast) {
     editHours, setEditHours,
     editWebsiteUrl, setEditWebsiteUrl,
     editMapsUrl, setEditMapsUrl,
-    coverImageFile, coverImagePreview,
+    coverImageFile, coverImagePreview, moderatingCover,
     handleCoverChange,
     fetchDashboardData, saveProfile, switchRestaurant,
     analyticsStats,

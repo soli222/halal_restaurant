@@ -34,7 +34,7 @@ export const RATING_STYLES = {
 
 export const CERTIFYING_BODIES = ['ISNA', 'IFANCA', 'HFA', 'MAS', 'Local Mosque', 'Other'];
 
-export const CUISINES = ['All', 'Pakistani', 'Mediterranean', 'BBQ', 'American Halal', 'Indian', 'Persian', 'Middle Eastern', 'Lebanese', 'Afghan', 'Indonesian', 'Ethiopian', 'Burgers'];
+export const CUISINES = ['All', 'Pakistani', 'Mediterranean', 'BBQ', 'Coffee Shop', 'American Halal', 'Indian', 'Persian', 'Middle Eastern', 'Lebanese', 'Afghan', 'Indonesian', 'Ethiopian', 'Burgers'];
 
 export const CUISINE_IMAGES = {
   'Pakistani':      'https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=400&h=300&fit=crop&q=80',
@@ -49,6 +49,7 @@ export const CUISINE_IMAGES = {
   'Indonesian':     'https://images.unsplash.com/photo-1555243896-c709bfa0b564?w=400&h=300&fit=crop&q=80',
   'Ethiopian':      'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&h=300&fit=crop&q=80',
   'Burgers':        'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop&q=80',
+  'Coffee Shop':    'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop&q=80',
   'Turkish':        'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=400&h=300&fit=crop&q=80',
 };
 

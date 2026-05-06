@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { db, storage } from '../lib/firebase';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { moderateImage } from '../lib/moderate-image';
 
 export function useReviews(user, selected, showToast, setReviewStats) {
   const [reviews, setReviews] = useState([]);
@@ -19,6 +20,7 @@ export function useReviews(user, selected, showToast, setReviewStats) {
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [submittingReply, setSubmittingReply] = useState(false);
+  const [moderatingPhoto, setModeratingPhoto] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [speechSupported] = useState(() =>
     typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)
@@ -34,9 +36,29 @@ export function useReviews(user, selected, showToast, setReviewStats) {
     };
   }, []);
 
-  function handlePhotoChange(e) {
+  async function handlePhotoChange(e) {
     const file = e.target.files[0];
     if (!file) return;
+
+    if (user) {
+      setModeratingPhoto(true);
+      try {
+        const token = await user.getIdToken();
+        const { safe, reason } = await moderateImage(file, token);
+        if (!safe) {
+          showToast(
+            reason
+              ? `Photo rejected: ${reason}. Please upload a food or restaurant photo.`
+              : 'This image isn\'t allowed on HalalSpot. Please upload an appropriate photo.',
+            'error'
+          );
+          return;
+        }
+      } finally {
+        setModeratingPhoto(false);
+      }
+    }
+
     setPhoto(file);
     setPhotoPreview(URL.createObjectURL(file));
   }
@@ -264,6 +286,7 @@ export function useReviews(user, selected, showToast, setReviewStats) {
     replyText, setReplyText,
     submittingReply,
     isListening, speechSupported,
+    moderatingPhoto,
     handlePhotoChange, toggleListening,
     submitReview, submitReply, submitReport,
     generateSummary, generateAdvancedSummary,

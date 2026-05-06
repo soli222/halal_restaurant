@@ -11,6 +11,7 @@ import { useOnboarding } from './hooks/useOnboarding';
 import { useSearch } from './hooks/useSearch';
 
 import OwnerOnboarding from './components/OwnerOnboarding';
+import PostOnboardingSubscription from './components/PostOnboardingSubscription';
 import OwnerDashboard from './components/OwnerDashboard';
 import PricingView from './components/PricingView';
 import RestaurantDetailView from './components/RestaurantDetailView';
@@ -23,6 +24,8 @@ export default function Home() {
   const [ownerStep, setOwnerStep] = useState(null);
   const autoResumeDisabled = useRef(false);
   const [pendingOwnerDashboard, setPendingOwnerDashboard] = useState(false);
+  const pendingSubscriptionReturn = useRef(false);
+  const [showNoOwnerModal, setShowNoOwnerModal] = useState(false);
 
   const { toasts, showToast } = useToast();
 
@@ -76,7 +79,7 @@ export default function Home() {
   } = useReviews(user, selected, showToast, setReviewStats);
 
   const onboarding = useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserRole);
-  const ownerDashboard = useOwnerDashboard(showToast);
+  const ownerDashboard = useOwnerDashboard(showToast, user);
   const { notifications, unreadCount, markAllRead } = useNotifications(user);
 
   const {
@@ -132,21 +135,32 @@ export default function Home() {
     }
   }, [user?.uid]);
 
-  // After onboarding submission, skip PostOnboardingSubscription and go straight to dashboard
+  // Detect return from Stripe checkout (?subscribed=1) and store flag before user loads
   useEffect(() => {
-    if (ownerStep !== 'subscription' || !user) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('subscribed') === '1') {
+      pendingSubscriptionReturn.current = true;
+      window.history.replaceState({}, '', '/');
+    }
+  }, []);
+
+  // Complete onboarding and go to dashboard once user is confirmed after Stripe return
+  useEffect(() => {
+    if (!pendingSubscriptionReturn.current || !user || !userRole) return;
+    if (userRole !== 'owner') return;
+    pendingSubscriptionReturn.current = false;
     completeOnboarding();
     ownerDashboard.fetchDashboardData(user.uid);
     setView('owner-dashboard');
     setOwnerStep(null);
-  }, [ownerStep, user]);
+  }, [user?.uid, userRole]);
 
   // Redirect to dashboard after "Already listed? Sign in" button triggers sign-in
   useEffect(() => {
     if (!pendingOwnerDashboard || !user || !userRole) return;
     setPendingOwnerDashboard(false);
     if (userRole !== 'owner') {
-      showToast('No owner account found for this Google account.', 'error');
+      setShowNoOwnerModal(true);
       return;
     }
     autoResumeDisabled.current = true;
@@ -174,7 +188,7 @@ export default function Home() {
         ownerDashboard.fetchDashboardData(user.uid);
         setView('owner-dashboard');
       } else {
-        showToast("This account isn't registered as an owner.", 'error');
+        setShowNoOwnerModal(true);
       }
       return;
     }
@@ -242,6 +256,16 @@ export default function Home() {
     );
   }
 
+  // ─── SUBSCRIPTION GATE (post-onboarding) ─────────────────────────────────────
+  if (user && userRole === 'owner' && ownerStep === 'subscription') {
+    return (
+      <PostOnboardingSubscription
+        handleSubscribe={handleSubscribe}
+        loadingSub={loadingSub}
+      />
+    );
+  }
+
   // ─── OWNER DASHBOARD ─────────────────────────────────────────────────────────
   if (view === 'owner-dashboard' && user && userRole === 'owner') {
     return (
@@ -265,6 +289,7 @@ export default function Home() {
         editMapsUrl={ownerDashboard.editMapsUrl}
         setEditMapsUrl={ownerDashboard.setEditMapsUrl}
         coverImagePreview={ownerDashboard.coverImagePreview}
+        moderatingCover={ownerDashboard.moderatingCover}
         handleCoverChange={ownerDashboard.handleCoverChange}
         saveProfile={ownerDashboard.saveProfile}
         analyticsStats={ownerDashboard.analyticsStats}
@@ -351,6 +376,49 @@ export default function Home() {
 
   // ─── HOME VIEW ────────────────────────────────────────────────────────────
   return (
+    <>
+      {/* No owner account modal */}
+      {showNoOwnerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowNoOwnerModal(false)} />
+          <div className="relative bg-[#111111] border border-white/10 rounded-2xl p-7 max-w-md w-full shadow-2xl space-y-5">
+            {/* Icon */}
+            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 mx-auto">
+              <svg className="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+
+            {/* Text */}
+            <div className="text-center space-y-2">
+              <h2 className="text-base font-bold text-white">No owner account found</h2>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                The Google account you signed in with isn't registered as a restaurant owner on HalalSpot yet.
+              </p>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                To access the owner dashboard you'll need to list your restaurant first — it only takes a few minutes.
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-2.5">
+              <button
+                onClick={() => { setShowNoOwnerModal(false); setOwnerStep(1); }}
+                className="w-full bg-amber-500 hover:bg-amber-400 active:scale-95 text-black font-bold px-6 py-3 rounded-xl text-sm transition-all duration-200 shadow-lg shadow-amber-500/20"
+              >
+                List my restaurant →
+              </button>
+              <button
+                onClick={() => setShowNoOwnerModal(false)}
+                className="w-full text-sm text-gray-500 hover:text-gray-300 py-2 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     <HomeView
       user={user}
       userRole={userRole}
@@ -397,5 +465,6 @@ export default function Home() {
       deferredPrompt={deferredPrompt}
       setDeferredPrompt={setDeferredPrompt}
     />
+    </>
   );
 }

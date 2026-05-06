@@ -48,7 +48,7 @@ export default function OwnerOnboarding({
     { num: 2, icon: '✅', title: 'Halal Certification',     hint: 'Halal certification is the foundation of trust on HalalSpot. Customers rely on this information to make dining decisions with confidence.' },
     { num: 3, icon: '📄', title: 'Certification Documents', hint: 'Our verification team reviews these documents to confirm your certification is authentic before your listing goes live. All files are stored securely.' },
     { num: 4, icon: '🌐', title: 'Online Presence',          hint: "Help customers find and learn about your restaurant before they visit. These are optional but improve your listing's visibility." },
-    { num: 5, icon: '📋', title: 'Review & Confirm',         hint: 'Take a moment to review your details before submitting. Our team will verify your submission within 1–2 business days.' },
+    { num: 5, icon: '📋', title: 'Review & Confirm',         hint: 'Take a moment to review your details before submitting. Our team will verify your submission within 7 business days.' },
   ];
   const currentStep = STEPS[ownerStep - 1];
 
@@ -151,7 +151,7 @@ export default function OwnerOnboarding({
                 type="date"
                 value={certExpiry}
                 onChange={e => setCertExpiry(e.target.value)}
-                className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200"
+                className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200 [color-scheme:dark]"
               />
             </div>
           </div>

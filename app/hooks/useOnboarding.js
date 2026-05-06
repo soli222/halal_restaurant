@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { db, storage } from '../lib/firebase';
+import { moderateImage } from '../lib/moderate-image';
 import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { DEFAULT_HOURS } from '../constants';
@@ -58,6 +59,28 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserR
 
     setVerifyLoading(true);
     try {
+      // Moderate all image uploads before sending anything to storage
+      const token = await user.getIdToken();
+      const filesToCheck = [
+        { file: halalCertFile, label: 'Halal certificate' },
+        { file: businessLicenseFile, label: 'Business licence' },
+        { file: healthPermitFile, label: 'Health permit' },
+        ...verifyFiles.map((f, i) => ({ file: f, label: `Supporting document ${i + 1}` })),
+      ];
+      for (const { file, label } of filesToCheck) {
+        if (!file || !file.type.startsWith('image/')) continue;
+        const { safe, reason } = await moderateImage(file, token);
+        if (!safe) {
+          setVerifyError(
+            reason
+              ? `${label} was rejected: ${reason}. Please upload the correct document.`
+              : `${label} contains content that isn't allowed. Please upload the correct document.`
+          );
+          setVerifyLoading(false);
+          return;
+        }
+      }
+
       const proofUrls = [];
       for (const file of verifyFiles) {
         const r = storageRef(storage, `verification_proofs/${user.uid}/${file.name}`);

@@ -180,7 +180,7 @@ export default function HomeView({
                   <ul className="space-y-1.5">
                     {[
                       'Free 7-day trial — no card needed to start',
-                      'Your listing reviewed within 1–2 business days',
+                      'Your listing reviewed within 7 business days',
                       'Respond to reviews and grow your reputation',
                     ].map(item => (
                       <li key={item} className="flex items-center gap-2 text-sm text-gray-300">

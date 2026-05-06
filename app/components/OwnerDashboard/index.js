@@ -25,6 +25,7 @@ export default function OwnerDashboard({
   editWebsiteUrl, setEditWebsiteUrl,
   editMapsUrl, setEditMapsUrl,
   coverImagePreview,
+  moderatingCover = false,
   handleCoverChange,
   saveProfile,
   handleLogout,
@@ -225,7 +226,7 @@ export default function OwnerDashboard({
 
               {status === 'pending' && (
                 <p className="text-sm text-gray-400 bg-amber-500/5 border border-amber-500/15 rounded-xl px-4 py-3">
-                  Your verification is under review. Our team will approve your listing within 1–2 business days. You can update your profile below in the meantime.
+                  Your verification is under review. Our team will approve your listing within 7 business days. You can update your profile below in the meantime.
                 </p>
               )}
               {status === 'rejected' && (
@@ -251,7 +252,7 @@ export default function OwnerDashboard({
                         'Enter your restaurant details (name, city, cuisine type)',
                         'Submit your halal certification for verification',
                         'Upload supporting documents (business licence, health permit)',
-                        'Your listing is reviewed by the HalalSpot team within 1–2 business days',
+                        'Your listing is reviewed by the HalalSpot team within 7 business days',
                         'Once approved, your restaurant goes live and customers can find and review it',
                       ].map(item => (
                         <li key={item} className="flex items-start gap-2 text-sm text-gray-400">
@@ -367,10 +368,10 @@ export default function OwnerDashboard({
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         <span className="text-xs text-gray-500 group-hover:text-gray-300 transition-colors">
-                          {coverImagePreview ? 'Change cover photo' : 'Upload cover photo'}
+                          {moderatingCover ? 'Checking image…' : coverImagePreview ? 'Change cover photo' : 'Upload cover photo'}
                         </span>
                       </div>
-                      <input type="file" accept="image/*" className="hidden" onChange={handleCoverChange} />
+                      <input type="file" accept="image/*" className="hidden" onChange={handleCoverChange} disabled={moderatingCover} />
                     </label>
                   </div>
 

@@ -4,17 +4,16 @@ import { doc, getDoc } from 'firebase/firestore';
 
 export function useSubscription(user, handleLogin, showToast) {
   const [subscription, setSubscription] = useState(null);
-  const [loadingSub, setLoadingSub] = useState(false);
+  const [loadingSub, setLoadingSub] = useState(false);       // checkout redirect only
   const [upgradingToPro, setUpgradingToPro] = useState(false);
   const [cancellingSubscription, setCancellingSubscription] = useState(false);
 
   async function fetchSubscription(userId) {
-    setLoadingSub(true);
+    // Uses its own try/catch — does NOT touch loadingSub so it never disables buttons
     try {
       const snap = await getDoc(doc(db, 'subscriptions', userId));
       setSubscription(snap.exists() ? snap.data() : null);
     } catch (e) { setSubscription(null); }
-    setLoadingSub(false);
   }
 
   function isSubscribed() {
@@ -24,7 +23,8 @@ export function useSubscription(user, handleLogin, showToast) {
 
   function isPro() {
     if (!subscription) return false;
-    return subscription.plan === 'pro' || subscription.amount === 3000;
+    // Pro plan amount is 4000 cents ($40). Basic is 3000 cents ($30).
+    return subscription.plan === 'pro' || subscription.amount === 4000;
   }
 
   async function handleSubscribe(plan) {
