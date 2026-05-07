@@ -16,7 +16,7 @@ export async function POST(request) {
 
     const { reqId, status } = await request.json();
 
-    if (!reqId || typeof reqId !== 'string') {
+    if (!reqId || typeof reqId !== 'string' || reqId.length > 128) {
       return Response.json({ ok: false, error: 'Invalid reqId' }, { status: 400 });
     }
     if (!ALLOWED_STATUSES.includes(status)) {
