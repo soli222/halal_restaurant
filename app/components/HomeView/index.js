@@ -535,6 +535,17 @@ export default function HomeView({
         </div>
       </main>
 
+      {/* Footer */}
+      <footer className="border-t border-white/[0.06] mt-16 px-5 py-6">
+        <div className="max-w-[720px] mx-auto flex flex-col items-center gap-2 text-xs text-gray-600">
+          <p>© {new Date().getFullYear()} HalalSpot. All rights reserved.</p>
+          <div className="flex gap-5">
+            <a href="/privacy" className="hover:text-gray-400 transition-colors">Privacy Policy</a>
+            <a href="/terms" className="hover:text-gray-400 transition-colors">Terms of Use</a>
+          </div>
+        </div>
+      </footer>
+
       {/* PWA install banner */}
       {showInstallBanner && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#111111] border-t border-white/10 px-4 py-4 flex items-center justify-between gap-3 sm:hidden">
