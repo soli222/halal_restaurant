@@ -32,7 +32,7 @@ This is a **Next.js 14 App Router** project — all routes live under `app/`.
 
 - `app/page.js` — Thin orchestrator. Composes all hooks, owns top-level state (`view`, `ownerStep`, `returningFromStripe`), and renders the correct view component based on state. Does **not** contain UI directly.
 - `app/review/[id]/page.js` — Standalone shareable review page for a single restaurant (accessed via QR code or direct link).
-- `app/admin/page.js` — Admin-only dashboard for approving/rejecting halal verification requests and managing review reports. Has two tabs: Verifications and Reports. Admin role is checked client-side via `users/{uid}.role === 'admin'` in Firestore, but all write actions go through `/api/admin/update-status` which re-verifies server-side. To grant admin access, manually set `role: 'admin'` on the user document in Firestore — there is no self-elevation path.
+- `app/admin/page.js` — Admin-only dashboard for approving/rejecting halal verification requests and managing review reports. Has two tabs: Verifications and Reports. Admin role is checked client-side via `users/{uid}.role === 'admin'` in Firestore, but all write actions go through `/api/admin/update-status` which re-verifies server-side. To grant admin access, manually set `role: 'admin'` on the user document in Firestore — there is no self-elevation path. Features: real-time `onSnapshot` listener for new requests, amber alert banner showing pending count, NEW badge on submissions within 24h, document lightbox with comparison panel, verification checklist (6 items, local session state), and registry lookup link (Google search for cert number + certifying body).
 
 ### View components
 
@@ -48,7 +48,7 @@ This is a **Next.js 14 App Router** project — all routes live under `app/`.
 ### Hooks (all state lives here, not in page.js)
 
 - `useAuth` — Firebase Auth (Google Sign-In), user/role state, onboarding completion. `handleRoleSelect` only accepts `'customer'` or `'owner'` — role elevation to `'admin'` is silently blocked.
-- `useSubscription` — Stripe subscription status and checkout. `handleSubscribe` attaches a Firebase ID token to the checkout request. Also exposes `handleUpgrade` (Basic→Pro via `/api/upgrade-subscription`) and `handleCancel` (cancel at period end via `/api/cancel-subscription`). `fetchSubscription` does **not** set `loadingSub` — plan buttons are never disabled on page load. `isPro()` checks `subscription.amount === 5000` (Pro at $50/mo).
+- `useSubscription` — Stripe subscription status and checkout. `handleSubscribe` attaches a Firebase ID token to the checkout request. Also exposes `handleUpgrade` (Basic→Pro via `/api/upgrade-subscription`) and `handleCancel` (cancel at period end via `/api/cancel-subscription`). `fetchSubscription` does **not** set `loadingSub` — plan buttons are never disabled on page load. `isPro()` checks `subscription.amount === 5000` (Pro at $50/mo). `loadingSub` is `null | 'basic' | 'pro'` (not a boolean) so only the clicked plan button shows "Redirecting…".
 - `useFavourites` — Favourites list, toggle, Firestore sync.
 - `useRestaurants` — Restaurant list, selected restaurant, recently viewed, add restaurant. Also logs page views to the `analytics` collection (fire-and-forget) when a restaurant is opened.
 - `useReviews` — Reviews, rating, photo upload, AI summary, speech-to-text, share, analytics, report review. All calls to `/api/summarize` and `/api/notify-owner` attach a Firebase ID token via `Authorization: Bearer <token>`. On new review submission, writes a notification to `notifications/{ownerId}/items` if the restaurant has an `ownerId`. Photo uploads are moderated via `moderateImage()` before preview is set — rejected images show a toast with the reason.
@@ -84,11 +84,11 @@ All non-webhook API routes require a valid Firebase ID token in the `Authorizati
 - `reviews` — Reviews top-level collection, keyed by restaurantId. Requires a composite index on `(restaurantId ASC, createdAt DESC)` — create via Firebase Console if missing.
 - `users` — User profiles; `role` is `customer`, `owner`, or `admin`. Admin role must be set manually in Firestore — no self-elevation is possible.
 - `subscriptions` — Subscription status per userId, written by Stripe webhook. Fields: `status`, `plan` (`basic`/`pro`), `amount` (3000 or 5000), `stripeSubscriptionId`, `cancelAtPeriodEnd`, `currentPeriodEnd`, `cancelledAt` (set on deletion), `updatedAt`.
-- `verification_requests` — Halal verification submissions from restaurant owners (with proof documents, cert details, status: pending/approved/rejected). Document ID is the owner's `userId`.
+- `verification_requests` — Halal verification submissions from restaurant owners (with proof documents, cert details, status: pending/approved/rejected). Uses `addDoc` with auto-generated IDs and an `ownerId` field.
 - `favourites` — Per-user favourited restaurant IDs.
 - `analytics` — Page view events written when a restaurant is opened (restaurantId, userId, isAuthenticated, viewedAt). Public write, authenticated read. Used by `useOwnerDashboard` to compute stats.
 - `notifications/{userId}/items` — Per-user notification subcollection. Written by the server (Admin SDK) on verification approval/rejection, and by `useReviews` when a new review is posted. Read by `useNotifications` via `onSnapshot`.
-- `reports` — Review reports submitted by users (reviewId, reason, status: pending/resolved/dismissed). Authenticated write only; admin reads via the Admin SDK in `app/admin/page.js`.
+- `reports` — Review reports submitted by users (reviewId, reason, status: pending/resolved/dismissed). Authenticated write only; admin reads via the client SDK (Firestore rule checks `role == 'admin'`).
 
 ### Firebase Security Rules
 
@@ -97,8 +97,10 @@ Both Firestore and Storage require proper security rules — the default Firebas
 **Firestore rules summary:**
 - `restaurants`, `reviews` — public read; authenticated write
 - `analytics` — public write (includes anonymous visitors); authenticated read
-- `reports` — authenticated write; no client read (admin only via Admin SDK)
-- `users`, `favourites`, `subscriptions`, `verification_requests`, `notifications/{userId}/items` — owner-only read/write (`request.auth.uid == userId`)
+- `reports` — authenticated write; admin-only read (checks `users/{uid}.role == 'admin'` via Firestore `get()`)
+- `verification_requests` — owner read/write for own submissions; admin can read all (checks `users/{uid}.role == 'admin'` via Firestore `get()`)
+- `users`, `favourites`, `subscriptions`, `notifications/{userId}/items` — owner-only read/write (`request.auth.uid == userId`)
+- `users` write additionally blocks `role: 'admin'` — only `'customer'` and `'owner'` are writable client-side
 
 **Storage rules summary:**
 - `verification_proofs/{userId}/**` — authenticated read; owner write

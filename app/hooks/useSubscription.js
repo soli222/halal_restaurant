@@ -4,7 +4,7 @@ import { doc, getDoc } from 'firebase/firestore';
 
 export function useSubscription(user, handleLogin, showToast) {
   const [subscription, setSubscription] = useState(null);
-  const [loadingSub, setLoadingSub] = useState(false);       // checkout redirect only
+  const [loadingSub, setLoadingSub] = useState(null);        // null | 'basic' | 'pro'
   const [upgradingToPro, setUpgradingToPro] = useState(false);
   const [cancellingSubscription, setCancellingSubscription] = useState(false);
 
@@ -29,7 +29,7 @@ export function useSubscription(user, handleLogin, showToast) {
 
   async function handleSubscribe(plan) {
     if (!user) return handleLogin();
-    setLoadingSub(true);
+    setLoadingSub(plan);
     try {
       const token = await user.getIdToken();
       const res = await fetch('/api/create-checkout', {
@@ -47,7 +47,7 @@ export function useSubscription(user, handleLogin, showToast) {
         showToast('Something went wrong. Please try again.', 'error');
       }
     } catch (e) { showToast('Something went wrong. Please try again.', 'error'); }
-    setLoadingSub(false);
+    setLoadingSub(null);
   }
 
   async function handleUpgrade() {

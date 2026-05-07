@@ -623,17 +623,17 @@ export default function OwnerDashboard({
                         <div className="flex flex-wrap gap-3">
                           <button
                             onClick={() => handleSubscribe('basic')}
-                            disabled={loadingSub}
+                            disabled={!!loadingSub}
                             className="text-sm font-semibold text-white bg-white/10 hover:bg-white/20 active:scale-95 px-5 py-2.5 rounded-xl transition-all duration-200 disabled:opacity-50"
                           >
-                            {loadingSub ? 'Redirecting…' : 'Basic — $30/mo'}
+                            {loadingSub === 'basic' ? 'Redirecting…' : 'Basic — $30/mo'}
                           </button>
                           <button
                             onClick={() => handleSubscribe('pro')}
-                            disabled={loadingSub}
+                            disabled={!!loadingSub}
                             className="text-sm font-semibold text-black bg-amber-500 hover:bg-amber-400 active:scale-95 px-5 py-2.5 rounded-xl transition-all duration-200 shadow-lg shadow-amber-500/20 disabled:opacity-50"
                           >
-                            {loadingSub ? 'Redirecting…' : 'Pro — $50/mo'}
+                            {loadingSub === 'pro' ? 'Redirecting…' : 'Pro — $50/mo'}
                           </button>
                         </div>
                         <p className="text-xs text-gray-600">Your previous restaurant profile and reviews will be restored immediately.</p>
@@ -685,17 +685,17 @@ export default function OwnerDashboard({
                         <div className="flex flex-wrap gap-3">
                           <button
                             onClick={() => handleSubscribe('basic')}
-                            disabled={loadingSub}
+                            disabled={!!loadingSub}
                             className="text-sm font-semibold text-white bg-white/10 hover:bg-white/20 active:scale-95 px-5 py-2.5 rounded-xl transition-all duration-200 disabled:opacity-50"
                           >
-                            {loadingSub ? 'Redirecting…' : 'Basic — $30/mo'}
+                            {loadingSub === 'basic' ? 'Redirecting…' : 'Basic — $30/mo'}
                           </button>
                           <button
                             onClick={() => handleSubscribe('pro')}
-                            disabled={loadingSub}
+                            disabled={!!loadingSub}
                             className="text-sm font-semibold text-black bg-amber-500 hover:bg-amber-400 active:scale-95 px-5 py-2.5 rounded-xl transition-all duration-200 shadow-lg shadow-amber-500/20 disabled:opacity-50"
                           >
-                            {loadingSub ? 'Redirecting…' : 'Pro — $50/mo'}
+                            {loadingSub === 'pro' ? 'Redirecting…' : 'Pro — $50/mo'}
                           </button>
                         </div>
                       </div>

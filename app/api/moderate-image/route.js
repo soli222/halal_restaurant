@@ -1,6 +1,8 @@
 import { verifyToken } from '../../lib/auth-helpers';
 
 const ALLOWED_MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+// ~2 MB base64 limit (base64 overhead ≈ 4/3, so 2 MB raw ≈ 2.7 MB base64)
+const MAX_BASE64_LENGTH = 2_800_000;
 
 export async function POST(request) {
   const { uid } = await verifyToken(request);
@@ -15,6 +17,10 @@ export async function POST(request) {
 
   if (!imageData || !mediaType) {
     return Response.json({ error: 'Missing imageData or mediaType' }, { status: 400 });
+  }
+
+  if (typeof imageData !== 'string' || imageData.length > MAX_BASE64_LENGTH) {
+    return Response.json({ error: 'Image too large' }, { status: 413 });
   }
 
   // PDFs and non-image files pass through — only inspect images

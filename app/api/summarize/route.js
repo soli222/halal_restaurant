@@ -24,7 +24,7 @@ export async function POST(request) {
     const subDoc = await adminDb.collection('subscriptions').doc(uid).get();
     if (subDoc.exists) {
       const sub = subDoc.data();
-      if (['active', 'trialing'].includes(sub.status) && (sub.plan === 'pro' || sub.amount === 3000)) {
+      if (['active', 'trialing'].includes(sub.status) && (sub.plan === 'pro' || sub.amount === 5000)) {
         isPro = true;
       }
     }

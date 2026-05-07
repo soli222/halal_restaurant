@@ -21,7 +21,7 @@ export async function POST(request) {
       return Response.json({ error: 'Invalid plan' }, { status: 400 });
     }
 
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
+    if (!email || typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return Response.json({ error: 'Invalid email' }, { status: 400 });
     }
 

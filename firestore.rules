@@ -5,11 +5,17 @@ service cloud.firestore {
     // Public read — anyone can browse restaurants & reviews
     match /restaurants/{id} {
       allow read: if true;
-      allow write: if request.auth != null;
+      // Any auth user can create; only the owner can update/delete their listing
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
     }
     match /reviews/{id} {
       allow read: if true;
-      allow write: if request.auth != null;
+      // Any auth user can create a review; only the author can update/delete it
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
     }
 
     // Analytics: anyone can write (captures anonymous page views), authenticated read only
@@ -18,10 +24,11 @@ service cloud.firestore {
       allow read: if request.auth != null;
     }
 
-    // Reports: authenticated write only, no client reads (admin reads via Admin SDK)
+    // Reports: authenticated write only; admin users can read via client SDK
     match /reports/{id} {
       allow write: if request.auth != null;
-      allow read: if false;
+      allow read: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     // Users: owner can read/write their own doc.
@@ -52,7 +59,8 @@ service cloud.firestore {
     match /verification_requests/{reqId} {
       allow read: if request.auth != null && (
         resource.data.ownerId == request.auth.uid ||
-        reqId == request.auth.uid
+        reqId == request.auth.uid ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
       );
       allow create: if request.auth != null
         && request.resource.data.ownerId == request.auth.uid;

@@ -41,10 +41,10 @@ export default function PostOnboardingSubscription({ handleSubscribe, loadingSub
             </ul>
             <button
               onClick={() => handleSubscribe('basic')}
-              disabled={loadingSub}
+              disabled={!!loadingSub}
               className="w-full bg-white/10 hover:bg-white/20 active:scale-95 text-white font-semibold py-3 rounded-xl text-sm transition-all duration-200 disabled:opacity-50"
             >
-              {loadingSub ? 'Redirecting…' : 'Start free trial'}
+              {loadingSub === 'basic' ? 'Redirecting…' : 'Start free trial'}
             </button>
           </div>
 
@@ -73,10 +73,10 @@ export default function PostOnboardingSubscription({ handleSubscribe, loadingSub
             </ul>
             <button
               onClick={() => handleSubscribe('pro')}
-              disabled={loadingSub}
+              disabled={!!loadingSub}
               className="w-full bg-green-500 hover:bg-green-600 active:scale-95 text-white font-semibold py-3 rounded-xl text-sm transition-all duration-200 disabled:opacity-50 shadow-lg shadow-green-500/20"
             >
-              {loadingSub ? 'Redirecting…' : 'Start free trial'}
+              {loadingSub === 'pro' ? 'Redirecting…' : 'Start free trial'}
             </button>
           </div>
         </div>
