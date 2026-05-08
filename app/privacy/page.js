@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Privacy Policy — HalalSpot',
+  title: 'Privacy Policy — Halalgotos',
 };
 
 export default function PrivacyPolicy() {
@@ -27,9 +27,9 @@ export default function PrivacyPolicy() {
         <section className="space-y-3">
           <h2 className="text-base font-semibold text-white">1. Who We Are</h2>
           <p>
-            HalalSpot is an online platform that helps users discover halal-certified restaurants and
+            Halalgotos is an online platform that helps users discover halal-certified restaurants and
             allows restaurant owners to list and manage their businesses. Our contact email is{' '}
-            <span className="text-green-400">[contact@halalspot.app]</span>.
+            <a href="mailto:halalgotos@gmail.com" className="text-green-400 hover:text-green-300 underline underline-offset-2 transition-colors">halalgotos@gmail.com</a>.
           </p>
         </section>
 
@@ -62,7 +62,7 @@ export default function PrivacyPolicy() {
         <section className="space-y-3">
           <h2 className="text-base font-semibold text-white">3. How We Use Your Information</h2>
           <ul className="list-disc list-inside space-y-1.5 text-gray-400">
-            <li>To operate and provide the HalalSpot platform.</li>
+            <li>To operate and provide the Halalgotos platform.</li>
             <li>To verify restaurant halal certification submissions.</li>
             <li>To process subscription payments via Stripe.</li>
             <li>To send email notifications about your listings and reviews (if enabled).</li>
@@ -72,7 +72,7 @@ export default function PrivacyPolicy() {
 
         <section className="space-y-3">
           <h2 className="text-base font-semibold text-white">4. Third-Party Services</h2>
-          <p>We use the following third-party services to operate HalalSpot:</p>
+          <p>We use the following third-party services to operate Halalgotos:</p>
           <ul className="list-disc list-inside space-y-1.5 text-gray-400">
             <li><strong className="text-gray-300">Firebase (Google):</strong> Authentication, database, and file storage.</li>
             <li><strong className="text-gray-300">Stripe:</strong> Payment processing. Stripe's privacy policy governs how your payment data is handled.</li>
@@ -102,7 +102,7 @@ export default function PrivacyPolicy() {
             <strong className="text-gray-200">Limitation of liability:</strong> While we do our best to protect
             your data, no system is completely immune to security threats. In the event of a data breach,
             cyberattack, or unauthorised access — whether caused by external actors, technical failure, or
-            any other reason beyond our reasonable control — HalalSpot and its operators shall not be held
+            any other reason beyond our reasonable control — Halalgotos and its operators shall not be held
             liable for any resulting loss, damage, or harm. By using this platform, you acknowledge and accept
             this inherent risk of online services.
           </p>
@@ -113,7 +113,7 @@ export default function PrivacyPolicy() {
           <p>
             We retain your data for as long as your account is active or as needed to provide services.
             You may request deletion of your account and associated data by contacting us at{' '}
-            <span className="text-green-400">[contact@halalspot.app]</span>.
+            <a href="mailto:halalgotos@gmail.com" className="text-green-400 hover:text-green-300 underline underline-offset-2 transition-colors">halalgotos@gmail.com</a>.
           </p>
         </section>
 
@@ -128,14 +128,14 @@ export default function PrivacyPolicy() {
           </ul>
           <p>
             To exercise any of these rights, contact us at{' '}
-            <span className="text-green-400">[contact@halalspot.app]</span>.
+            <a href="mailto:halalgotos@gmail.com" className="text-green-400 hover:text-green-300 underline underline-offset-2 transition-colors">halalgotos@gmail.com</a>.
           </p>
         </section>
 
         <section className="space-y-3">
           <h2 className="text-base font-semibold text-white">8. Cookies</h2>
           <p>
-            HalalSpot does not use tracking or advertising cookies. Firebase Auth may use session cookies
+            Halalgotos does not use tracking or advertising cookies. Firebase Auth may use session cookies
             strictly necessary for authentication. No third-party advertising networks are used.
           </p>
         </section>
@@ -144,7 +144,7 @@ export default function PrivacyPolicy() {
           <h2 className="text-base font-semibold text-white">9. Changes to This Policy</h2>
           <p>
             We may update this Privacy Policy from time to time. Changes will be posted on this page with
-            an updated date. Continued use of HalalSpot after changes constitutes acceptance of the revised policy.
+            an updated date. Continued use of Halalgotos after changes constitutes acceptance of the revised policy.
           </p>
         </section>
 
@@ -152,7 +152,7 @@ export default function PrivacyPolicy() {
           <h2 className="text-base font-semibold text-white">10. Contact</h2>
           <p>
             For any privacy-related questions, contact us at{' '}
-            <span className="text-green-400">[contact@halalspot.app]</span>.
+            <a href="mailto:halalgotos@gmail.com" className="text-green-400 hover:text-green-300 underline underline-offset-2 transition-colors">halalgotos@gmail.com</a>.
           </p>
         </section>
 

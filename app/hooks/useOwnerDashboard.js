@@ -265,7 +265,7 @@ export function useOwnerDashboard(showToast, user) {
         showToast(
           reason
             ? `Image rejected: ${reason}. Please upload an appropriate restaurant photo.`
-            : 'This image isn\'t allowed on HalalSpot. Please upload an appropriate restaurant photo.',
+            : 'This image isn\'t allowed on Halalgotos. Please upload an appropriate restaurant photo.',
           'error'
         );
         return;

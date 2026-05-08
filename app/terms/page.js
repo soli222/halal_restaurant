@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Terms of Use — HalalSpot',
+  title: 'Terms of Use — Halalgotos',
 };
 
 export default function TermsOfUse() {
@@ -27,17 +27,17 @@ export default function TermsOfUse() {
         <section className="space-y-3">
           <h2 className="text-base font-semibold text-white">1. Acceptance of Terms</h2>
           <p>
-            By accessing or using HalalSpot ("the Platform"), you agree to be bound by these Terms of Use.
+            By accessing or using Halalgotos ("the Platform"), you agree to be bound by these Terms of Use.
             If you do not agree, please do not use the Platform. We may update these terms at any time —
-            continued use of HalalSpot constitutes acceptance of any changes.
+            continued use of Halalgotos constitutes acceptance of any changes.
           </p>
         </section>
 
         <section className="space-y-3">
           <h2 className="text-base font-semibold text-white">2. Platform Description</h2>
           <p>
-            HalalSpot is a directory platform that allows users to discover halal-certified restaurants and
-            enables restaurant owners to list and manage their business profiles. HalalSpot does not operate
+            Halalgotos is a directory platform that allows users to discover halal-certified restaurants and
+            enables restaurant owners to list and manage their business profiles. Halalgotos does not operate
             any restaurants and is not responsible for the quality, accuracy, or conduct of any listed business.
           </p>
         </section>
@@ -60,7 +60,7 @@ export default function TermsOfUse() {
               certification documents, during the onboarding process.
             </li>
             <li>
-              HalalSpot reviews submitted documents as part of a verification process; however, we do not
+              Halalgotos reviews submitted documents as part of a verification process; however, we do not
               guarantee the ongoing accuracy or validity of halal certifications. We are not a halal
               certifying body.
             </li>
@@ -81,8 +81,8 @@ export default function TermsOfUse() {
             <li>Reviews must be honest, fair, and based on genuine experience.</li>
             <li>You must not post false, defamatory, abusive, hateful, or misleading content.</li>
             <li>You must not post content that contains nudity, violence, or illegal material.</li>
-            <li>HalalSpot reserves the right to remove any review or content that violates these terms.</li>
-            <li>By submitting a review or photo, you grant HalalSpot a non-exclusive licence to display that
+            <li>Halalgotos reserves the right to remove any review or content that violates these terms.</li>
+            <li>By submitting a review or photo, you grant Halalgotos a non-exclusive licence to display that
             content on the Platform.</li>
           </ul>
         </section>
@@ -128,7 +128,7 @@ export default function TermsOfUse() {
         <section className="space-y-3">
           <h2 className="text-base font-semibold text-white">8. Limitation of Liability</h2>
           <p>
-            HalalSpot is provided "as is" without warranties of any kind, express or implied. To the
+            Halalgotos is provided "as is" without warranties of any kind, express or implied. To the
             fullest extent permitted by law:
           </p>
           <ul className="list-disc list-inside space-y-1.5 text-gray-400 mt-2">
@@ -149,8 +149,8 @@ export default function TermsOfUse() {
             <strong className="text-gray-200">Security incidents:</strong> While we implement reasonable
             security measures to protect user data and documents, no online platform can guarantee complete
             protection against cyberattacks, data breaches, or unauthorised access. In the event of a
-            security incident — regardless of cause — HalalSpot and its operators shall not be held liable
-            for any resulting loss or damage. By using HalalSpot, you acknowledge this risk and agree that
+            security incident — regardless of cause — Halalgotos and its operators shall not be held liable
+            for any resulting loss or damage. By using Halalgotos, you acknowledge this risk and agree that
             use of the Platform is at your own risk.
           </p>
         </section>
@@ -158,7 +158,7 @@ export default function TermsOfUse() {
         <section className="space-y-3">
           <h2 className="text-base font-semibold text-white">9. Intellectual Property</h2>
           <p>
-            All platform content, branding, and code is owned by HalalSpot or its licensors. You may not
+            All platform content, branding, and code is owned by Halalgotos or its licensors. You may not
             reproduce, distribute, or create derivative works without prior written permission.
           </p>
         </section>
@@ -166,7 +166,7 @@ export default function TermsOfUse() {
         <section className="space-y-3">
           <h2 className="text-base font-semibold text-white">10. Termination</h2>
           <p>
-            We reserve the right to suspend or terminate your access to HalalSpot at any time, with or
+            We reserve the right to suspend or terminate your access to Halalgotos at any time, with or
             without notice, for conduct that violates these Terms or is otherwise harmful to the Platform,
             its users, or third parties.
           </p>
@@ -185,7 +185,7 @@ export default function TermsOfUse() {
           <h2 className="text-base font-semibold text-white">12. Contact</h2>
           <p>
             For any questions about these Terms, contact us at{' '}
-            <span className="text-green-400">[contact@halalspot.app]</span>.
+            <a href="mailto:halalgotos@gmail.com" className="text-green-400 hover:text-green-300 underline underline-offset-2 transition-colors">halalgotos@gmail.com</a>.
           </p>
         </section>
 

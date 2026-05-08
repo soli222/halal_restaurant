@@ -1,6 +1,6 @@
 {
-  "name": "HalalSpot",
-  "short_name": "HalalSpot",
+  "name": "Halalgotos",
+  "short_name": "Halalgotos",
   "description": "Discover certified halal restaurants near you.",
   "start_url": "/",
   "display": "standalone",

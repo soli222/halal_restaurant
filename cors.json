@@ -1,6 +1,6 @@
 [
   {
-    "origin": ["http://localhost:3007", "https://halalspot.app"],
+    "origin": ["http://localhost:3007", "https://halalgotos.com"],
     "method": ["GET", "POST", "PUT", "DELETE", "HEAD"],
     "maxAgeSeconds": 3600,
     "responseHeader": ["Content-Type", "Authorization", "Content-Length", "User-Agent"]

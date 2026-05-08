@@ -7,7 +7,10 @@ import { DEFAULT_HOURS } from '../constants';
 
 export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserRole) {
   const [ownerBusinessName, setOwnerBusinessName] = useState('');
+  const [ownerStreetAddress, setOwnerStreetAddress] = useState('');
   const [ownerCity, setOwnerCity] = useState('');
+  const [ownerState, setOwnerState] = useState('');
+  const [ownerZip, setOwnerZip] = useState('');
   const [ownerCuisineType, setOwnerCuisineType] = useState('');
   const [verifyFiles, setVerifyFiles] = useState([]);
   const [businessLicenseFile, setBusinessLicenseFile] = useState(null);
@@ -110,7 +113,10 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserR
         userName: user.displayName || '',
         userEmail: user.email || '',
         businessName: ownerBusinessName.trim(),
+        streetAddress: ownerStreetAddress.trim() || null,
         ownerCity: ownerCity.trim(),
+        state: ownerState.trim() || null,
+        zip: ownerZip.trim() || null,
         cuisineType: ownerCuisineType,
         proofs: proofUrls,
         businessLicenseUrl,
@@ -146,7 +152,10 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserR
 
   return {
     ownerBusinessName, setOwnerBusinessName,
+    ownerStreetAddress, setOwnerStreetAddress,
     ownerCity, setOwnerCity,
+    ownerState, setOwnerState,
+    ownerZip, setOwnerZip,
     ownerCuisineType, setOwnerCuisineType,
     verifyFiles, businessLicenseFile, setBusinessLicenseFile,
     healthPermitFile, setHealthPermitFile,

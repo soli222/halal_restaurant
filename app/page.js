@@ -95,7 +95,12 @@ export default function Home() {
     showInstallBanner, setShowInstallBanner,
     deferredPrompt, setDeferredPrompt,
     searchContainerRef,
-    cities, sortedFiltered, suggestions,
+    locationRef,
+    locationSearch, setLocationSearch,
+    showLocationDropdown, setShowLocationDropdown,
+    visibleLocationOptions,
+    selectLocation, clearLocation,
+    sortedFiltered, suggestions,
     handleSuggestionSelect,
   } = useSearch(restaurants, reviewStats, favourites);
 
@@ -115,7 +120,7 @@ export default function Home() {
   // Restore recently viewed from localStorage
   useEffect(() => {
     try {
-      const stored = JSON.parse(localStorage.getItem('halalspot_recent') || '[]');
+      const stored = JSON.parse(localStorage.getItem('halalgotos_recent') || '[]');
       setRecentlyViewed(stored);
     } catch (e) {}
   }, []);
@@ -238,8 +243,14 @@ export default function Home() {
         setVerifyError={onboarding.setVerifyError}
         ownerBusinessName={onboarding.ownerBusinessName}
         setOwnerBusinessName={onboarding.setOwnerBusinessName}
+        ownerStreetAddress={onboarding.ownerStreetAddress}
+        setOwnerStreetAddress={onboarding.setOwnerStreetAddress}
         ownerCity={onboarding.ownerCity}
         setOwnerCity={onboarding.setOwnerCity}
+        ownerState={onboarding.ownerState}
+        setOwnerState={onboarding.setOwnerState}
+        ownerZip={onboarding.ownerZip}
+        setOwnerZip={onboarding.setOwnerZip}
         ownerCuisineType={onboarding.ownerCuisineType}
         setOwnerCuisineType={onboarding.setOwnerCuisineType}
         certifyingBody={onboarding.certifyingBody}
@@ -406,7 +417,7 @@ export default function Home() {
             <div className="text-center space-y-2">
               <h2 className="text-base font-bold text-white">No owner account found</h2>
               <p className="text-sm text-gray-400 leading-relaxed">
-                The Google account you signed in with isn't registered as a restaurant owner on HalalSpot yet.
+                The Google account you signed in with isn't registered as a restaurant owner on Halalgotos yet.
               </p>
               <p className="text-sm text-gray-400 leading-relaxed">
                 To access the owner dashboard you'll need to list your restaurant first — it only takes a few minutes.
@@ -469,7 +480,14 @@ export default function Home() {
       highlightedIdx={highlightedIdx}
       setHighlightedIdx={setHighlightedIdx}
       searchContainerRef={searchContainerRef}
-      cities={cities}
+      locationRef={locationRef}
+      locationSearch={locationSearch}
+      setLocationSearch={setLocationSearch}
+      showLocationDropdown={showLocationDropdown}
+      setShowLocationDropdown={setShowLocationDropdown}
+      visibleLocationOptions={visibleLocationOptions}
+      selectLocation={selectLocation}
+      clearLocation={clearLocation}
       sortedFiltered={sortedFiltered}
       suggestions={suggestions}
       handleSuggestionSelect={handleSuggestionSelect}

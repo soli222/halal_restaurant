@@ -49,7 +49,7 @@ export function useReviews(user, selected, showToast, setReviewStats) {
           showToast(
             reason
               ? `Photo rejected: ${reason}. Please upload a food or restaurant photo.`
-              : 'This image isn\'t allowed on HalalSpot. Please upload an appropriate photo.',
+              : 'This image isn\'t allowed on Halalgotos. Please upload an appropriate photo.',
             'error'
           );
           return;
@@ -213,7 +213,7 @@ export function useReviews(user, selected, showToast, setReviewStats) {
   async function shareRestaurant() {
     const url = `${window.location.origin}/review/${selected.id}`;
     if (navigator.share) {
-      try { await navigator.share({ title: selected.name, text: `Check out ${selected.name} on HalalSpot!`, url }); }
+      try { await navigator.share({ title: selected.name, text: `Check out ${selected.name} on Halalgotos!`, url }); }
       catch (e) {}
     } else {
       try { await navigator.clipboard.writeText(url); showToast('Link copied!'); }

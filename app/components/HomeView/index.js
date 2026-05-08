@@ -27,7 +27,12 @@ export default function HomeView({
   showSuggestions, setShowSuggestions,
   highlightedIdx, setHighlightedIdx,
   searchContainerRef,
-  cities, sortedFiltered, suggestions,
+  locationRef,
+  locationSearch, setLocationSearch,
+  showLocationDropdown, setShowLocationDropdown,
+  visibleLocationOptions,
+  selectLocation, clearLocation,
+  sortedFiltered, suggestions,
   handleSuggestionSelect,
   // PWA
   showInstallBanner, setShowInstallBanner,
@@ -53,7 +58,7 @@ export default function HomeView({
           >
             <span className="absolute -inset-2 rounded-xl blur-xl bg-green-500/15 -z-10" />
             <span>☪️</span>
-            <span>HalalSpot</span>
+            <span>Halalgotos</span>
           </button>
           {user ? (
             <div className="flex items-center gap-3">
@@ -109,14 +114,14 @@ export default function HomeView({
         {/* Informational sections — shown to customers and logged-out visitors only */}
         {!selected && (!user || userRole === 'customer') && (
           <div className="space-y-10">
-            {/* How HalalSpot Works */}
+            {/* How Halalgotos Works */}
             <div className="space-y-5">
-              <h2 className="text-base font-bold text-white text-center tracking-tight">How HalalSpot Works</h2>
+              <h2 className="text-base font-bold text-white text-center tracking-tight">How Halalgotos Works</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                   { icon: '🔍', title: 'Find', desc: 'Browse restaurants in your city that have been verified for halal compliance.' },
                   { icon: '✅', title: 'Trust', desc: 'Read real, honest reviews written by the Muslim community, for the Muslim community.' },
-                  { icon: '🍽️', title: 'Dine', desc: 'Visit with confidence knowing every certification on HalalSpot has been checked.' },
+                  { icon: '🍽️', title: 'Dine', desc: 'Visit with confidence knowing every certification on Halalgotos has been checked.' },
                 ].map(({ icon, title, desc }) => (
                   <div key={title} className="bg-[#111111] border border-white/[0.06] rounded-2xl p-5 space-y-3 text-center">
                     <div className="text-3xl">{icon}</div>
@@ -127,9 +132,9 @@ export default function HomeView({
               </div>
             </div>
 
-            {/* Why Choose HalalSpot */}
+            {/* Why Choose Halalgotos */}
             <div className="space-y-5">
-              <h2 className="text-base font-bold text-white text-center tracking-tight">Why Choose HalalSpot?</h2>
+              <h2 className="text-base font-bold text-white text-center tracking-tight">Why Choose Halalgotos?</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                   { icon: '🏅', title: 'Verified Halal Only', desc: 'Every restaurant must submit halal certification documents before their listing goes live.' },
@@ -175,7 +180,7 @@ export default function HomeView({
                     <span className="text-amber-400">Get verified and listed.</span>
                   </h3>
                   <p className="text-sm text-gray-400 leading-relaxed max-w-sm">
-                    Join HalalSpot and reach thousands of Muslim diners actively looking for certified halal restaurants in your city. Verification takes less than 5 minutes.
+                    Join Halalgotos and reach thousands of Muslim diners actively looking for certified halal restaurants in your city. Verification takes less than 5 minutes.
                   </p>
                   <ul className="space-y-1.5">
                     {[
@@ -244,8 +249,14 @@ export default function HomeView({
                   { key: 'restaurant', groupLabel: 'Restaurants', icon: (
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                   )},
+                  { key: 'state', groupLabel: 'States', icon: (
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10h1v11H4V10zm15 0h1v11h-1V10zm-7 0h1v11h-1V10z" /></svg>
+                  )},
                   { key: 'city', groupLabel: 'Cities', icon: (
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  )},
+                  { key: 'zip', groupLabel: 'ZIP Codes', icon: (
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" /></svg>
                   )},
                   { key: 'cuisine', groupLabel: 'Cuisines', icon: (
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
@@ -277,14 +288,49 @@ export default function HomeView({
               </div>
             )}
           </div>
-          <select
-            value={cityFilter}
-            onChange={e => setCityFilter(e.target.value)}
-            className="flex-shrink-0 bg-[#111111] border border-white/10 rounded-2xl px-3 py-4 text-sm text-gray-300 focus:outline-none focus:border-green-500/40 transition-all duration-200 cursor-pointer max-w-[140px]"
-          >
-            <option value="All Cities">All Cities</option>
-            {cities.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <div className="relative flex-shrink-0 w-[160px]" ref={locationRef}>
+            <div className="relative">
+              <input
+                type="text"
+                value={locationSearch}
+                onChange={e => { setLocationSearch(e.target.value); setShowLocationDropdown(true); }}
+                onFocus={() => setShowLocationDropdown(true)}
+                placeholder="All Locations"
+                className="w-full bg-[#111111] border border-white/10 rounded-2xl px-3 py-4 text-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:border-green-500/40 transition-all duration-200 pr-8"
+              />
+              {locationSearch ? (
+                <button
+                  onClick={clearLocation}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors text-xs"
+                >
+                  ✕
+                </button>
+              ) : (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </span>
+              )}
+            </div>
+            {showLocationDropdown && visibleLocationOptions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[#111111] border border-white/10 rounded-2xl overflow-hidden z-50 shadow-2xl shadow-black/60 max-h-64 overflow-y-auto">
+                {visibleLocationOptions.map((opt, i) => (
+                  <button
+                    key={i}
+                    onMouseDown={e => { e.preventDefault(); selectLocation(opt); }}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+                  >
+                    <span className="text-gray-600 flex-shrink-0">
+                      {opt.type === 'state' ? '🗺' : opt.type === 'zip' ? '#' : '📍'}
+                    </span>
+                    <span className="truncate">{opt.display}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Halal-only banner */}
@@ -538,8 +584,9 @@ export default function HomeView({
       {/* Footer */}
       <footer className="border-t border-white/[0.06] mt-16 px-5 py-6">
         <div className="max-w-[720px] mx-auto flex flex-col items-center gap-2 text-xs text-gray-600">
-          <p>© {new Date().getFullYear()} HalalSpot. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Halalgotos. All rights reserved.</p>
           <div className="flex gap-5">
+            <a href="/faq" className="hover:text-gray-400 transition-colors">FAQ</a>
             <a href="/privacy" className="hover:text-gray-400 transition-colors">Privacy Policy</a>
             <a href="/terms" className="hover:text-gray-400 transition-colors">Terms of Use</a>
           </div>
@@ -550,7 +597,7 @@ export default function HomeView({
       {showInstallBanner && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#111111] border-t border-white/10 px-4 py-4 flex items-center justify-between gap-3 sm:hidden">
           <div className="min-w-0">
-            <p className="text-white text-sm font-semibold">Install HalalSpot</p>
+            <p className="text-white text-sm font-semibold">Install Halalgotos</p>
             <p className="text-gray-500 text-xs truncate">Add to your home screen for quick access</p>
           </div>
           <div className="flex gap-2 flex-shrink-0">

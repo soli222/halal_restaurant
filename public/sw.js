@@ -1,4 +1,4 @@
-const CACHE_NAME = 'halalspot-v1';
+const CACHE_NAME = 'halalgotos-v1';
 const APP_SHELL = [
   '/',
   '/manifest.json',

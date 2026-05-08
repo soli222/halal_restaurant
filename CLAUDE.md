@@ -33,11 +33,14 @@ This is a **Next.js 14 App Router** project — all routes live under `app/`.
 - `app/page.js` — Thin orchestrator. Composes all hooks, owns top-level state (`view`, `ownerStep`, `returningFromStripe`), and renders the correct view component based on state. Does **not** contain UI directly.
 - `app/review/[id]/page.js` — Standalone shareable review page for a single restaurant (accessed via QR code or direct link).
 - `app/admin/page.js` — Admin-only dashboard for approving/rejecting halal verification requests and managing review reports. Has two tabs: Verifications and Reports. Admin role is checked client-side via `users/{uid}.role === 'admin'` in Firestore, but all write actions go through `/api/admin/update-status` which re-verifies server-side. To grant admin access, manually set `role: 'admin'` on the user document in Firestore — there is no self-elevation path. Features: real-time `onSnapshot` listener for new requests, amber alert banner showing pending count, NEW badge on submissions within 24h, document lightbox with comparison panel, verification checklist (6 items, local session state), and registry lookup link (Google search for cert number + certifying body).
+- `app/privacy/page.js` — Privacy Policy page.
+- `app/terms/page.js` — Terms of Use page.
+- `app/faq/page.js` — FAQ page with 5 sections (General, Halal Verification, Reviews, Restaurant Owners, Account & Privacy). Uses native `<details>`/`<summary>` accordion — no JS required.
 
 ### View components
 
-- `app/components/HomeView/index.js` — Main homepage: hero, search/filter, restaurant grid, top rated, recently viewed, owner CTA. The informational sections and owner CTA are only shown when `!selected && (!user || userRole === 'customer' || (userRole === 'owner' && !onboardingComplete))`.
-- `app/components/OwnerOnboarding.js` — 5-step owner verification flow (restaurant info → halal cert → documents → online presence → review & confirm). Verification review time is **7 business days**.
+- `app/components/HomeView/index.js` — Main homepage: hero, search/filter, restaurant grid, top rated, recently viewed, owner CTA. The informational sections and owner CTA are only shown when `!selected && (!user || userRole === 'customer' || (userRole === 'owner' && !onboardingComplete))`. Footer links to FAQ, Privacy Policy, and Terms of Use.
+- `app/components/OwnerOnboarding.js` — 5-step owner verification flow (restaurant info → halal cert → documents → online presence → review & confirm). Verification review time is **7 business days**. Step 1 collects full address: Street Address (required), City (required), State/Province (optional), ZIP/Postal Code (optional).
 - `app/components/OwnerDashboard/index.js` — Owner dashboard: verification status, linked restaurant profile editor, recent reviews, page view analytics chart, and notifications bell. Subscription management lives in a **Settings section** at the bottom (not inline). Supports cancel (with listing visibility warning + 2-step confirm), upgrade Basic→Pro, and re-subscribe after cancellation. Pro downgrade to Basic is **not allowed**. Notifications are fetched via `useNotifications`.
 - `app/components/PostOnboardingSubscription.js` — Subscription prompt shown after owner completes verification. **No "skip" option** — a paid plan is required to activate the listing.
 - `app/components/PricingView.js` — Pricing/upgrade page for customers. Plans: Basic $30/mo, Pro $50/mo.
@@ -50,12 +53,12 @@ This is a **Next.js 14 App Router** project — all routes live under `app/`.
 - `useAuth` — Firebase Auth (Google Sign-In), user/role state, onboarding completion. `handleRoleSelect` only accepts `'customer'` or `'owner'` — role elevation to `'admin'` is silently blocked.
 - `useSubscription` — Stripe subscription status and checkout. `handleSubscribe` attaches a Firebase ID token to the checkout request. Also exposes `handleUpgrade` (Basic→Pro via `/api/upgrade-subscription`) and `handleCancel` (cancel at period end via `/api/cancel-subscription`). `fetchSubscription` does **not** set `loadingSub` — plan buttons are never disabled on page load. `isPro()` checks `subscription.amount === 5000` (Pro at $50/mo). `loadingSub` is `null | 'basic' | 'pro'` (not a boolean) so only the clicked plan button shows "Redirecting…".
 - `useFavourites` — Favourites list, toggle, Firestore sync.
-- `useRestaurants` — Restaurant list, selected restaurant, recently viewed, add restaurant. Also logs page views to the `analytics` collection (fire-and-forget) when a restaurant is opened.
+- `useRestaurants` — Restaurant list, selected restaurant, recently viewed, add restaurant. Recently viewed IDs are persisted in `localStorage` under the key `halalgotos_recent`. Also logs page views to the `analytics` collection (fire-and-forget) when a restaurant is opened.
 - `useReviews` — Reviews, rating, photo upload, AI summary, speech-to-text, share, analytics, report review. All calls to `/api/summarize` and `/api/notify-owner` attach a Firebase ID token via `Authorization: Bearer <token>`. On new review submission, writes a notification to `notifications/{ownerId}/items` if the restaurant has an `ownerId`. Photo uploads are moderated via `moderateImage()` before preview is set — rejected images show a toast with the reason.
-- `useOnboarding` — Owner onboarding form state and `submitVerification` (saves to Firestore/Storage at step 5 only). All image/document files are moderated via `moderateImage()` at submit time before upload — submission is aborted if any file is flagged.
+- `useOnboarding` — Owner onboarding form state and `submitVerification` (saves to Firestore/Storage at step 5 only). Collects `ownerStreetAddress`, `ownerCity`, `ownerState`, `ownerZip` in step 1. All image/document files are moderated via `moderateImage()` at submit time before upload — submission is aborted if any file is flagged.
 - `useOwnerDashboard` — Fetches verification request, linked restaurant, recent reviews, and page view analytics from the `analytics` collection for the owner's restaurant. Manages `moderatingCover` state — cover image uploads are moderated before saving.
 - `useNotifications` — Subscribes to `notifications/{user.uid}/items` via `onSnapshot`. Only active when user is signed in. Provides `notifications`, `unreadCount`, and `markAllRead`.
-- `useSearch` — Search, cuisine/city/open-now filters, sort, suggestions, PWA install banner.
+- `useSearch` — Search, cuisine/city/open-now filters, sort, suggestions, PWA install banner. Location filter is a typeahead input backed by `locationOptions` (flat list of `{ display, filterValue, type }` built from `r.city`+`r.state`, `r.state`, and `r.zip`). Exposes `locationSearch`, `showLocationDropdown`, `locationRef`, `visibleLocationOptions`, `selectLocation()`, `clearLocation()`. Main text search matches against `name`, `location`, `city`, `state`, `zip`, and `cuisine`. `handleSuggestionSelect` for city/state/zip also updates `locationSearch` display text.
 - `useToast` — Toast queue.
 
 ### API Routes
@@ -69,7 +72,7 @@ All non-webhook API routes require a valid Firebase ID token in the `Authorizati
 - `app/api/moderate-image/route.js` — Uses Anthropic Claude (`claude-haiku-4-5-20251001`) via direct `fetch` to the Anthropic REST API to classify uploaded images. Rejects nudity, drugs, violence, hate symbols, alcohol. Accepts food, restaurant photos, documents, people dining. PDFs pass through. Fails open on API error (does not block uploads if AI is unavailable).
 - `app/api/webhook/route.js` — Stripe webhook handler; verifies Stripe signature, writes subscription status/plan to `subscriptions/{userId}` in Firestore via Admin SDK. On `customer.subscription.deleted`, writes `cancelledAt` timestamp. No auth token required (called by Stripe).
 - `app/api/notify-owner/route.js` — Sends email notification to owner when a new review is posted. Validates `rating` against the allowed enum and caps `reviewText` at 2000 chars. All user content is HTML-escaped before being embedded in the email.
-- `app/api/admin/update-status/route.js` — Server-side admin endpoint for approving/rejecting verification requests. Verifies Firebase token AND checks `users/{uid}.role === 'admin'` in Firestore before allowing any write. Validates `status` against `['approved', 'rejected', 'pending']`. **On approval, automatically creates a restaurant document** in the `restaurants` collection from the verification request data (idempotent — checks for existing `ownerId` first). Also sends an in-app notification to the owner via `notifications/{userId}/items`.
+- `app/api/admin/update-status/route.js` — Server-side admin endpoint for approving/rejecting verification requests. Verifies Firebase token AND checks `users/{uid}.role === 'admin'` in Firestore before allowing any write. Validates `status` against `['approved', 'rejected', 'pending']`. **On approval, automatically creates a restaurant document** in the `restaurants` collection from the verification request data (idempotent — checks for existing `verificationRequestId` first). Restaurant document includes `streetAddress`, `city`, `state`, `zip`, and a combined `location` string. Also sends an in-app notification to the owner via `notifications/{userId}/items`.
 
 ### Libraries
 
@@ -80,11 +83,11 @@ All non-webhook API routes require a valid Firebase ID token in the `Authorizati
 
 ### Firestore collections
 
-- `restaurants` — Restaurant documents (name, city, cuisine, ownerId, halal cert info, hours, urls, etc.). Created automatically when a verification request is approved.
+- `restaurants` — Restaurant documents. Fields include `name`, `city`, `state`, `zip`, `streetAddress`, `location` (combined string for legacy search), `cuisine`, `ownerId`, halal cert info, hours, urls, etc. Created automatically when a verification request is approved.
 - `reviews` — Reviews top-level collection, keyed by restaurantId. Requires a composite index on `(restaurantId ASC, createdAt DESC)` — create via Firebase Console if missing.
 - `users` — User profiles; `role` is `customer`, `owner`, or `admin`. Admin role must be set manually in Firestore — no self-elevation is possible.
 - `subscriptions` — Subscription status per userId, written by Stripe webhook. Fields: `status`, `plan` (`basic`/`pro`), `amount` (3000 or 5000), `stripeSubscriptionId`, `cancelAtPeriodEnd`, `currentPeriodEnd`, `cancelledAt` (set on deletion), `updatedAt`.
-- `verification_requests` — Halal verification submissions from restaurant owners (with proof documents, cert details, status: pending/approved/rejected). Uses `addDoc` with auto-generated IDs and an `ownerId` field.
+- `verification_requests` — Halal verification submissions from restaurant owners (with proof documents, cert details, full address, status: pending/approved/rejected). Uses `addDoc` with auto-generated IDs and an `ownerId` field.
 - `favourites` — Per-user favourited restaurant IDs.
 - `analytics` — Page view events written when a restaurant is opened (restaurantId, userId, isAuthenticated, viewedAt). Public write, authenticated read. Used by `useOwnerDashboard` to compute stats.
 - `notifications/{userId}/items` — Per-user notification subcollection. Written by the server (Admin SDK) on verification approval/rejection, and by `useReviews` when a new review is posted. Read by `useNotifications` via `onSnapshot`.
@@ -188,8 +191,8 @@ Copy `.env.local.example` to `.env.local`. Required variables:
 | `ANTHROPIC_API_KEY` | console.anthropic.com — required for AI summaries and image moderation |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`, `STRIPE_PRO_PRICE_ID` | Stripe Dashboard |
 | `NEXT_PUBLIC_APP_URL` | Base URL (e.g. `http://localhost:3007`) |
-| `RESEND_API_KEY` | resend.com |
-| `RESEND_FROM_EMAIL` | Sender address (e.g. `HalalSpot <notifications@yourdomain.com>`) |
+| `RESEND_API_KEY` | resend.com (optional — app works without it, owners just won't get email alerts) |
+| `RESEND_FROM_EMAIL` | Sender address (e.g. `Halalgotos <notifications@yourdomain.com>`) |
 
 ---
 
@@ -207,9 +210,37 @@ Copy `.env.local.example` to `.env.local`. Required variables:
 - Restaurant images fall back to `CUISINE_IMAGES[cuisine]` then `DEFAULT_FOOD_IMAGE` (both from Unsplash) when no `coverImageUrl` is set on the restaurant document.
 - `next.config.js` sets security headers on all routes: `X-Frame-Options`, `X-Content-Type-Options`, `Strict-Transport-Security`, `Referrer-Policy`, `Permissions-Policy`, and a `Content-Security-Policy`. When adding new external scripts or connect targets, update the CSP in `next.config.js`.
 - The dev server runs on port **3007** (`next dev -p 3007`).
-- When a restaurant is approved, a restaurant document is auto-created in `restaurants` collection by `/api/admin/update-status`. The document includes `ownerId` (the owner's uid) which is used by `useOwnerDashboard` to find the linked restaurant.
+- When a restaurant is approved, a restaurant document is auto-created in `restaurants` collection by `/api/admin/update-status`. The document includes `ownerId`, `streetAddress`, `city`, `state`, `zip`, and `location` (a combined string built from those fields for backward-compatible text search).
 - The `analytics` collection is written client-side (no auth required) so anonymous page views are captured. Owners can view their stats in the dashboard via a bar chart of the last 14 days.
 - Image moderation uses Anthropic Claude Haiku via direct `fetch` (the `@anthropic-ai/sdk` package is **not** installed — use `fetch` to `https://api.anthropic.com/v1/messages` as done in `summarize/route.js` and `moderate-image/route.js`).
 - "Already listed? Sign in" button: if the signed-in user has no owner account, a friendly modal is shown explaining they need to list their restaurant first (not a red error toast).
 - Certification expiry date input uses `[color-scheme:dark]` CSS class so the native calendar icon renders white on dark backgrounds.
 - Stale Firestore notifications (from before text copy was updated) may appear in the notification bell with outdated wording — clear them manually in Firebase Console under `notifications/{userId}/items` during development.
+- Recently viewed restaurant IDs are stored in `localStorage` under the key `halalgotos_recent` (5 max). Loaded on mount via `useEffect` in `page.js`.
+- Contact email for support is `halalgotos@gmail.com`. This appears as a `mailto:` link in the Privacy Policy, Terms of Use, and FAQ pages.
+- The location filter in `useSearch` is a typeahead input (not a `<select>`). It builds `locationOptions` dynamically from restaurant `city`+`state`, `state`, and `zip` fields. The list grows automatically as new restaurants are approved — no manual curation needed.
+
+---
+
+## Privacy & Legal Pages
+
+- `/privacy` — Privacy Policy at `app/privacy/page.js`
+- `/terms` — Terms of Use at `app/terms/page.js`
+- `/faq` — FAQ at `app/faq/page.js`
+- Footer links to all three pages appear in `HomeView`, and each legal/FAQ page links back to the homepage.
+- Contact email on all pages: `halalgotos@gmail.com` (rendered as a `mailto:` link).
+
+---
+
+## Pending / To-Do
+
+1. **Deployment** — user is deploying to Vercel at `halalgotos.com`. Checklist when ready:
+   - Deploy to Vercel (connect GitHub repo, set env vars)
+   - Connect domain in Vercel
+   - Update `NEXT_PUBLIC_APP_URL` to `https://halalgotos.com`
+   - Update Stripe webhook endpoint to live URL
+   - Update Firebase authorized domains
+   - Deploy updated Firestore rules to Firebase Console
+   - Set up Resend with verified domain (optional)
+2. **Rate limiting** — no rate limiting on API routes yet; recommended at hosting layer (Vercel/Cloudflare) or via Upstash.
+3. **Resend API key** — not yet configured; app works without it but owners won't receive email notifications on new reviews.

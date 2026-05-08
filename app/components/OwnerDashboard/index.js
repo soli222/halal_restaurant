@@ -85,7 +85,7 @@ export default function OwnerDashboard({
           >
             <span className="absolute -inset-2 rounded-xl blur-xl bg-amber-500/10 -z-10" />
             <span>☪️</span>
-            <span>HalalSpot</span>
+            <span>Halalgotos</span>
           </button>
           <div className="flex items-center gap-3">
             <span className="text-xs font-semibold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-3 py-1 rounded-full">
@@ -231,7 +231,7 @@ export default function OwnerDashboard({
               )}
               {status === 'rejected' && (
                 <p className="text-sm text-gray-400 bg-red-500/5 border border-red-500/15 rounded-xl px-4 py-3">
-                  Your verification was rejected. Please contact us at <span className="text-red-400">support@halalspot.com</span> for more information.
+                  Your verification was rejected. Please contact us at <span className="text-red-400">support@halalgotos.com</span> for more information.
                 </p>
               )}
               {!verificationRequest && (
@@ -252,7 +252,7 @@ export default function OwnerDashboard({
                         'Enter your restaurant details (name, city, cuisine type)',
                         'Submit your halal certification for verification',
                         'Upload supporting documents (business licence, health permit)',
-                        'Your listing is reviewed by the HalalSpot team within 7 business days',
+                        'Your listing is reviewed by the Halalgotos team within 7 business days',
                         'Once approved, your restaurant goes live and customers can find and review it',
                       ].map(item => (
                         <li key={item} className="flex items-start gap-2 text-sm text-gray-400">

@@ -5,7 +5,10 @@ export default function OwnerOnboarding({
   user, handleSignInToSubmit,
   verifyError, setVerifyError,
   ownerBusinessName, setOwnerBusinessName,
+  ownerStreetAddress, setOwnerStreetAddress,
   ownerCity, setOwnerCity,
+  ownerState, setOwnerState,
+  ownerZip, setOwnerZip,
   ownerCuisineType, setOwnerCuisineType,
   certifyingBody, setCertifyingBody,
   certNumber, setCertNumber,
@@ -26,6 +29,7 @@ export default function OwnerOnboarding({
     setVerifyError('');
     if (ownerStep === 1) {
       if (!ownerBusinessName.trim()) { setVerifyError('Please enter your restaurant name.'); return; }
+      if (!ownerStreetAddress.trim()) { setVerifyError('Please enter your street address.'); return; }
       if (!ownerCity.trim()) { setVerifyError('Please enter your city.'); return; }
       if (!ownerCuisineType) { setVerifyError('Please select a cuisine type.'); return; }
     }
@@ -44,8 +48,8 @@ export default function OwnerOnboarding({
   };
 
   const STEPS = [
-    { num: 1, icon: '🏪', title: 'Your Restaurant',         hint: "Let's set up your profile. We'll use this to create your restaurant's listing so customers can find you on HalalSpot." },
-    { num: 2, icon: '✅', title: 'Halal Certification',     hint: 'Halal certification is the foundation of trust on HalalSpot. Customers rely on this information to make dining decisions with confidence.' },
+    { num: 1, icon: '🏪', title: 'Your Restaurant',         hint: "Let's set up your profile. We'll use this to create your restaurant's listing so customers can find you on Halalgotos." },
+    { num: 2, icon: '✅', title: 'Halal Certification',     hint: 'Halal certification is the foundation of trust on Halalgotos. Customers rely on this information to make dining decisions with confidence.' },
     { num: 3, icon: '📄', title: 'Certification Documents', hint: 'Our verification team reviews these documents to confirm your certification is authentic before your listing goes live. All files are stored securely.' },
     { num: 4, icon: '🌐', title: 'Online Presence',          hint: "Help customers find and learn about your restaurant before they visit. These are optional but improve your listing's visibility." },
     { num: 5, icon: '📋', title: 'Review & Confirm',         hint: 'Take a moment to review your details before submitting. Our team will verify your submission within 7 business days.' },
@@ -62,7 +66,7 @@ export default function OwnerOnboarding({
       {/* Header */}
       <header className="pt-7 pb-4 px-5 flex items-center justify-between max-w-lg mx-auto">
         <div className="flex items-center gap-2 text-white font-bold text-lg">
-          <span>☪️</span><span>HalalSpot</span>
+          <span>☪️</span><span>Halalgotos</span>
         </div>
         <div className="flex items-center gap-4">
           <span className="text-xs text-gray-500">Step {ownerStep} of 5</span>
@@ -100,11 +104,40 @@ export default function OwnerOnboarding({
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">City <span className="text-red-400">*</span></label>
+              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Street Address <span className="text-red-400">*</span></label>
               <input
-                value={ownerCity}
-                onChange={e => setOwnerCity(e.target.value)}
-                placeholder="e.g. Toronto"
+                value={ownerStreetAddress}
+                onChange={e => setOwnerStreetAddress(e.target.value)}
+                placeholder="e.g. 123 Main St"
+                className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 placeholder-gray-600 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">City <span className="text-red-400">*</span></label>
+                <input
+                  value={ownerCity}
+                  onChange={e => setOwnerCity(e.target.value)}
+                  placeholder="e.g. Austin"
+                  className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 placeholder-gray-600 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">State / Province</label>
+                <input
+                  value={ownerState}
+                  onChange={e => setOwnerState(e.target.value)}
+                  placeholder="e.g. TX"
+                  className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 placeholder-gray-600 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">ZIP / Postal Code</label>
+              <input
+                value={ownerZip}
+                onChange={e => setOwnerZip(e.target.value)}
+                placeholder="e.g. 78701"
                 className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 placeholder-gray-600 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200"
               />
             </div>
@@ -234,7 +267,10 @@ export default function OwnerOnboarding({
             <div className="bg-[#111111] border border-white/[0.06] rounded-2xl p-5 space-y-3">
               {[
                 { label: 'Restaurant', value: ownerBusinessName },
+                { label: 'Address', value: ownerStreetAddress },
                 { label: 'City', value: ownerCity },
+                { label: 'State', value: ownerState || '—' },
+                { label: 'ZIP', value: ownerZip || '—' },
                 { label: 'Cuisine', value: ownerCuisineType },
                 { label: 'Certifying Body', value: certifyingBody },
                 { label: 'Cert Number', value: certNumber },

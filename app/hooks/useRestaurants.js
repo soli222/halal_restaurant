@@ -73,9 +73,9 @@ export function useRestaurants(user, setView, showToast) {
       isAuthenticated: !!user,
     }).catch(() => {});
     try {
-      const prev = JSON.parse(localStorage.getItem('halalspot_recent') || '[]');
+      const prev = JSON.parse(localStorage.getItem('halalgotos_recent') || '[]');
       const updated = [rest.id, ...prev.filter(id => id !== rest.id)].slice(0, 5);
-      localStorage.setItem('halalspot_recent', JSON.stringify(updated));
+      localStorage.setItem('halalgotos_recent', JSON.stringify(updated));
       setRecentlyViewed(updated);
     } catch (e) {}
   }
@@ -103,7 +103,7 @@ export function useRestaurants(user, setView, showToast) {
       try {
         const q = encodeURIComponent(`${newRestName.trim()} ${newRestLocation.trim()}`);
         const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
-          headers: { 'User-Agent': 'HalalSpot/1.0' },
+          headers: { 'User-Agent': 'Halalgotos/1.0' },
         });
         const data = await res.json();
         if (data.length > 0) {

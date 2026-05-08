@@ -40,7 +40,11 @@ export async function POST(request) {
           const newRestRef = adminDb.collection('restaurants').doc();
           tx.set(newRestRef, {
             name: req.businessName || '',
+            streetAddress: req.streetAddress || null,
             city: req.ownerCity || '',
+            state: req.state || null,
+            zip: req.zip || null,
+            location: [req.streetAddress, req.ownerCity, req.state].filter(Boolean).join(', ') || null,
             cuisine: req.cuisineType || '',
             ownerId,
             verificationRequestId: reqId,
@@ -71,7 +75,7 @@ export async function POST(request) {
       status === 'approved'
         ? 'Your restaurant verification has been approved! Your listing is now live.'
         : status === 'rejected'
-        ? 'Your restaurant verification was not approved. Please contact support@halalspot.com for more info.'
+        ? 'Your restaurant verification was not approved. Please contact support@halalgotos.com for more info.'
         : null;
     if (notifMessage) {
       adminDb

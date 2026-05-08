@@ -141,7 +141,7 @@ export default function ReviewPage({ params }) {
       <header className="bg-[#111111] border-b border-white/5 px-4 py-4 text-center">
         <h1 className="text-base font-bold text-white flex items-center justify-center gap-2">
           <span>☪️</span>
-          <span>HalalSpot</span>
+          <span>Halalgotos</span>
         </h1>
       </header>
 

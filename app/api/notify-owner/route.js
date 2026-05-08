@@ -55,17 +55,17 @@ export async function POST(request) {
     const safeRestaurantName = escapeHtml(restData.name);
 
     await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'HalalSpot <onboarding@resend.dev>',
+      from: process.env.RESEND_FROM_EMAIL || 'Halalgotos <onboarding@resend.dev>',
       to: ownerEmail,
-      subject: `New review for ${restData.name} on HalalSpot`,
+      subject: `New review for ${restData.name} on Halalgotos`,
       html: `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#0a0a0a;color:#e5e5e5;border-radius:12px;">
-          <h2 style="color:#22c55e;margin-top:0;">New Review on HalalSpot</h2>
-          <p>You have a new review on HalalSpot! A customer rated your restaurant as <strong style="color:#22c55e;">${ratingLabel}</strong> and left this comment:</p>
+          <h2 style="color:#22c55e;margin-top:0;">New Review on Halalgotos</h2>
+          <p>You have a new review on Halalgotos! A customer rated your restaurant as <strong style="color:#22c55e;">${ratingLabel}</strong> and left this comment:</p>
           <blockquote style="border-left:3px solid #22c55e;padding:12px 16px;background:#111;border-radius:0 8px 8px 0;margin:16px 0;color:#d1d5db;">
             &ldquo;${safeReviewText}&rdquo;
           </blockquote>
-          <p><a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://halalspot.app'}" style="display:inline-block;background:#22c55e;color:#000;font-weight:600;padding:10px 20px;border-radius:8px;text-decoration:none;">Log in to HalalSpot to reply</a></p>
+          <p><a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://halalgotos.com'}" style="display:inline-block;background:#22c55e;color:#000;font-weight:600;padding:10px 20px;border-radius:8px;text-decoration:none;">Log in to Halalgotos to reply</a></p>
         </div>
       `,
     });

@@ -49,7 +49,7 @@ export async function POST(request) {
               },
               {
                 type: 'text',
-                text: `You are a content moderator for HalalSpot, a halal restaurant review platform. Analyse this image strictly.
+                text: `You are a content moderator for Halalgotos, a halal restaurant review platform. Analyse this image strictly.
 
 REJECT (respond UNSAFE) if the image contains ANY of:
 - Nudity, sexual content, or suggestive imagery
