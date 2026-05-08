@@ -133,8 +133,27 @@ function Lightbox({ lightbox, onClose }) {
               <div className="space-y-3">
                 <InfoRow label="Business name" value={req.businessName} highlight />
                 <InfoRow label="City" value={req.ownerCity} />
+                <InfoRow label="Cuisine" value={req.cuisineType || '—'} />
+                {req.cuisineOther && (
+                  <div className="rounded-lg bg-purple-500/10 border border-purple-500/20 px-3 py-2">
+                    <p className="text-[10px] font-semibold text-purple-400 uppercase tracking-wider mb-1">Custom cuisine type</p>
+                    <p className="text-xs text-gray-300">{req.cuisineOther}</p>
+                  </div>
+                )}
                 <InfoRow label="Certifying body" value={req.certifyingBody} highlight />
-                <InfoRow label="Cert number" value={req.certificationNumber ? `#${req.certificationNumber}` : null} highlight />
+                {req.certifyingBody === 'Other' && req.certOtherDetails && (
+                  <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
+                    <p className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider mb-1">Owner's cert description</p>
+                    <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">{req.certOtherDetails}</p>
+                  </div>
+                )}
+                <InfoRow label="Cert number" value={req.certNumberNA ? 'N/A' : req.certificationNumber ? `#${req.certificationNumber}` : null} highlight />
+                {req.certNumberNA && req.certNumberNADetails && (
+                  <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 px-3 py-2">
+                    <p className="text-[10px] font-semibold text-blue-400 uppercase tracking-wider mb-1">Why no cert number</p>
+                    <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">{req.certNumberNADetails}</p>
+                  </div>
+                )}
                 <InfoRow label="Cert expiry" value={req.certExpiryDate ? new Date(req.certExpiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null} />
                 <InfoRow label="Owner name" value={req.userName} />
                 <InfoRow label="Owner email" value={req.userEmail} />
@@ -425,13 +444,35 @@ export default function AdminPage() {
                     <p className="text-sm text-gray-300 mt-0.5">{req.ownerCity || '—'}</p>
                   </div>
                   <div>
+                    <p className="text-[10px] text-gray-600 uppercase tracking-wider">Cuisine</p>
+                    <p className="text-sm text-gray-300 mt-0.5">{req.cuisineType || '—'}</p>
+                  </div>
+                  {req.cuisineOther && (
+                    <div className="col-span-2 rounded-lg bg-purple-500/10 border border-purple-500/20 px-3 py-2">
+                      <p className="text-[10px] font-semibold text-purple-400 uppercase tracking-wider mb-1">Custom cuisine type</p>
+                      <p className="text-xs text-gray-300">{req.cuisineOther}</p>
+                    </div>
+                  )}
+                  <div>
                     <p className="text-[10px] text-gray-600 uppercase tracking-wider">Certifying body</p>
                     <p className="text-sm text-white font-medium mt-0.5">{req.certifyingBody || '—'}</p>
                   </div>
+                  {req.certifyingBody === 'Other' && req.certOtherDetails && (
+                    <div className="col-span-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
+                      <p className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider mb-1">Owner's cert description</p>
+                      <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">{req.certOtherDetails}</p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-[10px] text-gray-600 uppercase tracking-wider">Cert number</p>
-                    <p className="text-sm text-white font-medium mt-0.5">{req.certificationNumber ? `#${req.certificationNumber}` : '—'}</p>
+                    <p className="text-sm text-white font-medium mt-0.5">{req.certNumberNA ? 'N/A' : req.certificationNumber ? `#${req.certificationNumber}` : '—'}</p>
                   </div>
+                  {req.certNumberNA && req.certNumberNADetails && (
+                    <div className="col-span-2 rounded-lg bg-blue-500/10 border border-blue-500/20 px-3 py-2">
+                      <p className="text-[10px] font-semibold text-blue-400 uppercase tracking-wider mb-1">Why no cert number</p>
+                      <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">{req.certNumberNADetails}</p>
+                    </div>
+                  )}
                   {req.certExpiryDate && (
                     <div className="col-span-2">
                       <p className="text-[10px] text-gray-600 uppercase tracking-wider">Cert expiry</p>

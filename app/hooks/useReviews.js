@@ -3,6 +3,7 @@ import { db, storage } from '../lib/firebase';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { moderateImage } from '../lib/moderate-image';
+import { cleanProfanity } from '../lib/profanity-filter';
 
 export function useReviews(user, selected, showToast, setReviewStats) {
   const [reviews, setReviews] = useState([]);
@@ -85,6 +86,15 @@ export function useReviews(user, selected, showToast, setReviewStats) {
     if (!reviewText.trim()) return showToast('Please write a review before submitting.', 'error');
     setSubmitting(true);
     try {
+      // Filter profanity before saving — replace matched words with asterisks
+      const { cleaned: cleanedText, found: hadProfanity } = cleanProfanity(reviewText);
+      if (hadProfanity) {
+        setReviewText(cleanedText);
+        showToast('Your review contained inappropriate language and has been filtered.', 'error');
+        setSubmitting(false);
+        return;
+      }
+
       let photoUrl = null;
       if (photo) {
         const ext = photo.name.split('.').pop() || 'jpg';
@@ -98,7 +108,7 @@ export function useReviews(user, selected, showToast, setReviewStats) {
         userId: user.uid,
         userName: user.displayName,
         userPhoto: user.photoURL,
-        text: reviewText,
+        text: cleanedText,
         rating,
         certVisible,
         familyFriendly,
@@ -137,7 +147,7 @@ export function useReviews(user, selected, showToast, setReviewStats) {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
-          body: JSON.stringify({ restaurantId: selected.id, rating, reviewText }),
+          body: JSON.stringify({ restaurantId: selected.id, rating, reviewText: cleanedText }),
         });
       }).catch(() => {});
       const r = await fetchReviews(selected.id);

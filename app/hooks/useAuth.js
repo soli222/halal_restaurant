@@ -47,7 +47,13 @@ export function useAuth(showToast) {
     try { await signInWithPopup(auth, googleProvider); }
     catch (e) {
       console.error('Sign in error:', e.code, e.message);
-      if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+      const ignored = [
+        'auth/popup-closed-by-user',
+        'auth/cancelled-popup-request',
+      ];
+      // Firebase throws a plain Error (no .code) for internal assertion failures
+      // when the popup is dismissed mid-flow — treat these as cancellations too.
+      if (!ignored.includes(e.code) && !e.message?.includes('INTERNAL ASSERTION FAILED')) {
         showToast('Sign in failed. Please try again.', 'error');
       }
     }

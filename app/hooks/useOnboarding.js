@@ -12,12 +12,16 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserR
   const [ownerState, setOwnerState] = useState('');
   const [ownerZip, setOwnerZip] = useState('');
   const [ownerCuisineType, setOwnerCuisineType] = useState('');
+  const [cuisineOther, setCuisineOther] = useState('');
   const [verifyFiles, setVerifyFiles] = useState([]);
   const [businessLicenseFile, setBusinessLicenseFile] = useState(null);
   const [healthPermitFile, setHealthPermitFile] = useState(null);
   const [halalCertFile, setHalalCertFile] = useState(null);
   const [certifyingBody, setCertifyingBody] = useState('');
+  const [certOtherDetails, setCertOtherDetails] = useState('');
   const [certNumber, setCertNumber] = useState('');
+  const [certNumberNA, setCertNumberNA] = useState(false);
+  const [certNumberNADetails, setCertNumberNADetails] = useState('');
   const [certExpiry, setCertExpiry] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [mapsUrl, setMapsUrl] = useState('');
@@ -56,7 +60,9 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserR
     if (!healthPermitFile) { setVerifyError('Health Permit / Food Safety Certificate is required.'); return; }
     if (!halalCertFile) { setVerifyError('Halal Certification Certificate is required.'); return; }
     if (!certifyingBody) { setVerifyError('Please select a certifying body.'); return; }
-    if (!certNumber.trim()) { setVerifyError('Certification Number is required.'); return; }
+    if (certifyingBody === 'Other' && !certOtherDetails.trim()) { setVerifyError('Please describe your certifying body.'); return; }
+    if (!certNumberNA && !certNumber.trim()) { setVerifyError('Certification Number is required, or tick "I don\'t have a number" and explain.'); return; }
+    if (certNumberNA && !certNumberNADetails.trim()) { setVerifyError('Please explain why you don\'t have a certification number.'); return; }
     if (!certExpiry) { setVerifyError('Certificate Expiry Date is required.'); return; }
     if (!confirmOwnership) { setVerifyError('You must confirm ownership before submitting.'); return; }
 
@@ -107,7 +113,7 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserR
       await setDoc(doc(db, 'users', user.uid), { role: 'owner' }, { merge: true });
       if (setUserRole) setUserRole('owner');
 
-      await addDoc(collection(db, 'verification_requests'), {
+      const verifRef = await addDoc(collection(db, 'verification_requests'), {
         ownerId: user.uid,
         userId: user.uid,
         userName: user.displayName || '',
@@ -117,19 +123,35 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserR
         ownerCity: ownerCity.trim(),
         state: ownerState.trim() || null,
         zip: ownerZip.trim() || null,
-        cuisineType: ownerCuisineType,
+        cuisineType: ownerCuisineType === 'Other' ? (cuisineOther.trim() || 'Other') : ownerCuisineType,
+        cuisineOther: ownerCuisineType === 'Other' ? cuisineOther.trim() : null,
         proofs: proofUrls,
         businessLicenseUrl,
         healthPermitUrl,
         halalCertificateUrl,
         certifyingBody,
-        certificationNumber: certNumber.trim(),
+        certOtherDetails: certifyingBody === 'Other' ? certOtherDetails.trim() : null,
+        certificationNumber: certNumberNA ? null : certNumber.trim(),
+        certNumberNA: certNumberNA || false,
+        certNumberNADetails: certNumberNA ? certNumberNADetails.trim() : null,
         certExpiryDate: certExpiry,
         websiteUrl: websiteUrl.trim() || null,
         mapsUrl: mapsUrl.trim() || null,
         status: 'pending',
         createdAt: serverTimestamp(),
       });
+
+      // Send confirmation email to owner (fire-and-forget — don't block on email)
+      user.getIdToken().then(token => {
+        // addDoc returns the ref; we need the ID to look up the doc in the API
+        // We query by ownerId + status pending to find the just-created doc
+        fetch('/api/notify-verification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ type: 'submitted', reqId: verifRef.id }),
+        });
+      }).catch(() => {});
+
       setOwnerStep('subscription');
       showToast('Verification submitted!');
       setVerifyFiles([]);
@@ -157,11 +179,15 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserR
     ownerState, setOwnerState,
     ownerZip, setOwnerZip,
     ownerCuisineType, setOwnerCuisineType,
+    cuisineOther, setCuisineOther,
     verifyFiles, businessLicenseFile, setBusinessLicenseFile,
     healthPermitFile, setHealthPermitFile,
     halalCertFile, setHalalCertFile,
     certifyingBody, setCertifyingBody,
+    certOtherDetails, setCertOtherDetails,
     certNumber, setCertNumber,
+    certNumberNA, setCertNumberNA,
+    certNumberNADetails, setCertNumberNADetails,
     certExpiry, setCertExpiry,
     websiteUrl, setWebsiteUrl,
     mapsUrl, setMapsUrl,

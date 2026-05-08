@@ -10,8 +10,12 @@ export default function OwnerOnboarding({
   ownerState, setOwnerState,
   ownerZip, setOwnerZip,
   ownerCuisineType, setOwnerCuisineType,
+  cuisineOther, setCuisineOther,
   certifyingBody, setCertifyingBody,
+  certOtherDetails, setCertOtherDetails,
   certNumber, setCertNumber,
+  certNumberNA, setCertNumberNA,
+  certNumberNADetails, setCertNumberNADetails,
   certExpiry, setCertExpiry,
   halalCertFile, setHalalCertFile,
   businessLicenseFile, setBusinessLicenseFile,
@@ -32,6 +36,7 @@ export default function OwnerOnboarding({
       if (!ownerStreetAddress.trim()) { setVerifyError('Please enter your street address.'); return; }
       if (!ownerCity.trim()) { setVerifyError('Please enter your city.'); return; }
       if (!ownerCuisineType) { setVerifyError('Please select a cuisine type.'); return; }
+      if (ownerCuisineType === 'Other' && !cuisineOther.trim()) { setVerifyError('Please describe your cuisine type.'); return; }
     }
     if (ownerStep === 2) {
       if (!certifyingBody) { setVerifyError('Please select a certifying body.'); return; }
@@ -145,12 +150,25 @@ export default function OwnerOnboarding({
               <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Cuisine Type <span className="text-red-400">*</span></label>
               <select
                 value={ownerCuisineType}
-                onChange={e => setOwnerCuisineType(e.target.value)}
+                onChange={e => { setOwnerCuisineType(e.target.value); if (e.target.value !== 'Other') setCuisineOther(''); }}
                 className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200 appearance-none"
               >
                 <option value="">Select a cuisine type…</option>
                 {CUISINES.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="Other">Other</option>
               </select>
+              {ownerCuisineType === 'Other' && (
+                <div className="space-y-1 mt-2">
+                  <input
+                    value={cuisineOther}
+                    onChange={e => setCuisineOther(e.target.value)}
+                    placeholder="e.g. Yemeni, Uyghur, Trinidadian…"
+                    maxLength={60}
+                    className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 placeholder-gray-600 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200"
+                  />
+                  <p className="text-xs text-gray-600 text-right">{cuisineOther.length}/60</p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -162,21 +180,65 @@ export default function OwnerOnboarding({
               <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Certifying Body <span className="text-red-400">*</span></label>
               <select
                 value={certifyingBody}
-                onChange={e => setCertifyingBody(e.target.value)}
+                onChange={e => { setCertifyingBody(e.target.value); if (e.target.value !== 'Other') setCertOtherDetails(''); }}
                 className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200 appearance-none"
               >
                 <option value="">Select a certifying body…</option>
                 {CERTIFYING_BODIES.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
+            {certifyingBody === 'Other' && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Describe your certifying body <span className="text-red-400">*</span>
+                </label>
+                <textarea
+                  value={certOtherDetails}
+                  onChange={e => setCertOtherDetails(e.target.value)}
+                  placeholder="e.g. Certified by Al-Noor Islamic Center, Chicago. Certificate issued annually, contact: alnoor@example.com"
+                  rows={3}
+                  maxLength={500}
+                  className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 placeholder-gray-600 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200 resize-none"
+                />
+                <p className="text-xs text-gray-600 text-right">{certOtherDetails.length}/500</p>
+              </div>
+            )}
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Certification Number <span className="text-red-400">*</span></label>
+              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Certification Number {!certNumberNA && <span className="text-red-400">*</span>}
+              </label>
               <input
                 value={certNumber}
                 onChange={e => setCertNumber(e.target.value)}
-                placeholder="e.g. ISNA-2024-00123"
-                className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 placeholder-gray-600 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200"
+                disabled={certNumberNA}
+                placeholder={certNumberNA ? 'Not applicable' : 'e.g. ISNA-2024-00123'}
+                className={`w-full bg-[#111111] rounded-xl px-4 py-3 text-sm placeholder-gray-600 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200 ${certNumberNA ? 'text-gray-600 cursor-not-allowed opacity-50' : 'text-gray-100'}`}
               />
+              <label className="flex items-center gap-2 cursor-pointer mt-1 select-none">
+                <input
+                  type="checkbox"
+                  checked={certNumberNA}
+                  onChange={e => { setCertNumberNA(e.target.checked); if (!e.target.checked) setCertNumberNADetails(''); setCertNumber(''); }}
+                  className="w-4 h-4 rounded border-white/20 bg-[#111111] accent-green-500"
+                />
+                <span className="text-xs text-gray-400">I don't have a certification number</span>
+              </label>
+              {certNumberNA && (
+                <div className="space-y-1.5 mt-2">
+                  <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                    Please explain <span className="text-red-400">*</span>
+                  </label>
+                  <textarea
+                    value={certNumberNADetails}
+                    onChange={e => setCertNumberNADetails(e.target.value)}
+                    placeholder="e.g. Our certification is issued as a general approval letter without an individual number. The certifying body is Al-Noor Islamic Center and the approval covers all menu items."
+                    rows={3}
+                    maxLength={500}
+                    className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 placeholder-gray-600 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200 resize-none"
+                  />
+                  <p className="text-xs text-gray-600 text-right">{certNumberNADetails.length}/500</p>
+                </div>
+              )}
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Certificate Expiry Date <span className="text-red-400">*</span></label>
@@ -271,9 +333,11 @@ export default function OwnerOnboarding({
                 { label: 'City', value: ownerCity },
                 { label: 'State', value: ownerState || '—' },
                 { label: 'ZIP', value: ownerZip || '—' },
-                { label: 'Cuisine', value: ownerCuisineType },
+                { label: 'Cuisine', value: ownerCuisineType === 'Other' ? `Other — ${cuisineOther}` : ownerCuisineType },
                 { label: 'Certifying Body', value: certifyingBody },
-                { label: 'Cert Number', value: certNumber },
+                ...(certifyingBody === 'Other' ? [{ label: 'Cert Details', value: certOtherDetails }] : []),
+                { label: 'Cert Number', value: certNumberNA ? 'N/A — see explanation' : certNumber },
+                ...(certNumberNA ? [{ label: 'Cert Number Note', value: certNumberNADetails }] : []),
                 { label: 'Cert Expiry', value: certExpiry },
                 { label: 'Halal Certificate', value: halalCertFile?.name },
                 { label: 'Business License', value: businessLicenseFile?.name },

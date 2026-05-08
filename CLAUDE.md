@@ -72,6 +72,8 @@ All non-webhook API routes require a valid Firebase ID token in the `Authorizati
 - `app/api/moderate-image/route.js` — Uses Anthropic Claude (`claude-haiku-4-5-20251001`) via direct `fetch` to the Anthropic REST API to classify uploaded images. Rejects nudity, drugs, violence, hate symbols, alcohol. Accepts food, restaurant photos, documents, people dining. PDFs pass through. Fails open on API error (does not block uploads if AI is unavailable).
 - `app/api/webhook/route.js` — Stripe webhook handler; verifies Stripe signature, writes subscription status/plan to `subscriptions/{userId}` in Firestore via Admin SDK. On `customer.subscription.deleted`, writes `cancelledAt` timestamp. No auth token required (called by Stripe).
 - `app/api/notify-owner/route.js` — Sends email notification to owner when a new review is posted. Validates `rating` against the allowed enum and caps `reviewText` at 2000 chars. All user content is HTML-escaped before being embedded in the email.
+- `app/api/notify-verification/route.js` — Sends a "submission received" confirmation email to the restaurant owner immediately after they submit their verification request. Requires Firebase ID token. If `RESEND_API_KEY` is not set, skips silently without breaking the flow.
+- `app/api/admin/update-status/route.js` — Also sends approval or rejection emails directly via Resend when admin approves/rejects a request (fire-and-forget, won't break the approval flow if email fails).
 - `app/api/admin/update-status/route.js` — Server-side admin endpoint for approving/rejecting verification requests. Verifies Firebase token AND checks `users/{uid}.role === 'admin'` in Firestore before allowing any write. Validates `status` against `['approved', 'rejected', 'pending']`. **On approval, automatically creates a restaurant document** in the `restaurants` collection from the verification request data (idempotent — checks for existing `verificationRequestId` first). Restaurant document includes `streetAddress`, `city`, `state`, `zip`, and a combined `location` string. Also sends an in-app notification to the owner via `notifications/{userId}/items`.
 
 ### Libraries
@@ -192,7 +194,7 @@ Copy `.env.local.example` to `.env.local`. Required variables:
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`, `STRIPE_PRO_PRICE_ID` | Stripe Dashboard |
 | `NEXT_PUBLIC_APP_URL` | Base URL (e.g. `http://localhost:3007`) |
 | `RESEND_API_KEY` | resend.com (optional — app works without it, owners just won't get email alerts) |
-| `RESEND_FROM_EMAIL` | Sender address (e.g. `Halalgotos <notifications@yourdomain.com>`) |
+| `RESEND_FROM_EMAIL` | Sender address — must be `Halalgotos <notifications@halalgotos.com>` (domain must be verified in Resend) |
 
 ---
 
@@ -200,7 +202,7 @@ Copy `.env.local.example` to `.env.local`. Required variables:
 
 - The app is dark-mode only (`bg-[#0A0A0A]` / `bg-[#050505]`), styled with Tailwind CSS and Poppins font (applied globally in `layout.js`).
 - Rating values are `recommended`, `good`, `average`, `not_recommended` — not numeric stars.
-- Cuisine types: Middle Eastern, South Asian, Mediterranean, BBQ, Coffee Shop, Afghan, Somali, Malaysian, Ethiopian, Turkish, Fusion, Other. `CUISINES` and `CUISINE_IMAGES` are in `app/constants/index.js`.
+- Cuisine types are defined in `app/constants/index.js` (`CUISINES` array). The onboarding dropdown includes an **"Other"** option — when selected, a text input appears for the owner to type their custom cuisine. The typed value is saved as `cuisineType` in Firestore (so search works naturally) and the raw input is also saved as `cuisineOther` for admin visibility.
 - Stripe webhook must receive the raw request body (not parsed JSON) for signature verification — `route.js` uses `request.text()`.
 - `FIREBASE_PRIVATE_KEY` in `.env.local` must have literal `\n` replaced with actual newlines, or the Admin SDK init will fail. The `firebase-admin.js` handles this with `.replace(/\\n/g, '\n')`.
 - Firestore composite index required on `reviews` collection: `(restaurantId ASC, createdAt DESC)`. Create it via the link in the browser console error if missing.
@@ -219,6 +221,11 @@ Copy `.env.local.example` to `.env.local`. Required variables:
 - Recently viewed restaurant IDs are stored in `localStorage` under the key `halalgotos_recent` (5 max). Loaded on mount via `useEffect` in `page.js`.
 - Contact email for support is `halalgotos@gmail.com`. This appears as a `mailto:` link in the Privacy Policy, Terms of Use, and FAQ pages.
 - The location filter in `useSearch` is a typeahead input (not a `<select>`). It builds `locationOptions` dynamically from restaurant `city`+`state`, `state`, and `zip` fields. The list grows automatically as new restaurants are approved — no manual curation needed.
+- **Profanity filter:** `app/lib/profanity-filter.js` exports `cleanProfanity(text)` which returns `{ cleaned, found }`. Called in `useReviews` at submit time — if profanity is found, the censored text is written back to the review box, a toast is shown, and submission is blocked so the user can review and re-submit.
+- **Onboarding certifying body "Other":** When "Other" is selected in step 2, a textarea appears for the owner to describe their certifying body (saved as `certOtherDetails` in Firestore). Shown as an amber highlighted box in the admin dashboard.
+- **Onboarding cert number N/A:** A checkbox "I don't have a certification number" in step 2 disables the number input and shows a textarea for explanation (saved as `certNumberNA: true` and `certNumberNADetails`). Shown as a blue highlighted box in admin.
+- **Onboarding cuisine "Other":** Step 1 has an "Other" option in the cuisine dropdown. When selected, a text input appears (saved as `cuisineType` = typed value, `cuisineOther` = raw input). Shown as a purple highlighted box in admin.
+- **Firebase Auth popup error:** `handleLogin` in `useAuth` catches `INTERNAL ASSERTION FAILED` errors (thrown when popup is dismissed mid-flow) and treats them as silent cancellations — prevents the Next.js error overlay from appearing.
 
 ---
 
@@ -232,15 +239,56 @@ Copy `.env.local.example` to `.env.local`. Required variables:
 
 ---
 
-## Pending / To-Do
+## Pre-Production Checklist
 
-1. **Deployment** — user is deploying to Vercel at `halalgotos.com`. Checklist when ready:
-   - Deploy to Vercel (connect GitHub repo, set env vars)
-   - Connect domain in Vercel
+### 🔴 Must-have (blockers)
+
+1. **Vercel deployment**
+   - Connect GitHub repo to Vercel, set all env vars
+   - Connect `halalgotos.com` domain in Vercel
    - Update `NEXT_PUBLIC_APP_URL` to `https://halalgotos.com`
-   - Update Stripe webhook endpoint to live URL
-   - Update Firebase authorized domains
-   - Deploy updated Firestore rules to Firebase Console
-   - Set up Resend with verified domain (optional)
-2. **Rate limiting** — no rate limiting on API routes yet; recommended at hosting layer (Vercel/Cloudflare) or via Upstash.
-3. **Resend API key** — not yet configured; app works without it but owners won't receive email notifications on new reviews.
+
+2. **Stripe live keys**
+   - Swap test keys for live keys in Vercel env vars
+   - Update Stripe webhook endpoint to `https://halalgotos.com/api/webhook`
+   - Test the full subscription flow end-to-end with a real card before launch
+
+3. **Firebase production setup**
+   - Deploy Firestore security rules to Firebase Console (default rules expire)
+   - Add `halalgotos.com` to Firebase authorized domains
+
+4. **Admin account**
+   - Manually set `role: 'admin'` on the owner's Firestore user document in production
+   - Verify the admin dashboard works on prod before going live
+
+5. **Seed content**
+   - Have at least a handful of approved restaurants visible at launch — an empty directory kills first impressions
+
+### 🟡 Should-have (high impact, low effort)
+
+6. **Resend (email)** ✅ Done locally
+   - Domain `halalgotos.com` verified in Resend — emails send from `notifications@halalgotos.com`
+   - `RESEND_API_KEY` and `RESEND_FROM_EMAIL` set in `.env.local`
+   - Still need to add both vars to **Vercel environment variables** when deploying
+   - 3 automated emails: submission confirmation, approval, rejection
+
+7. **Error monitoring (Sentry)**
+   - No error visibility in prod without this — free Sentry project covers it
+   - Install `@sentry/nextjs`, run `npx @sentry/wizard@latest -i nextjs`, add `SENTRY_DSN` env var
+   - See: https://docs.sentry.io/platforms/javascript/guides/nextjs/
+
+8. **Rate limiting**
+   - No rate limiting on API routes yet — at minimum protect `/api/create-checkout` and `/api/summarize`
+   - Recommended: Upstash Redis + `@upstash/ratelimit` middleware, or Vercel/Cloudflare layer
+
+9. **SEO basics**
+   - No `sitemap.xml` or `robots.txt` — add so search engines can index restaurant pages
+   - No Open Graph / social preview image — links shared on WhatsApp/Twitter show blank previews
+
+### 🟢 Nice-to-have (post-launch fine)
+
+10. **Vercel Analytics** — free, one line to add (`import { Analytics } from '@vercel/analytics/react'` in `layout.js`), gives real visitor data
+11. **Custom 404 page** — currently falls back to Next.js default; add `app/not-found.js`
+12. **PWA icons** — verify `manifest.json` has proper sized icons (`192x192`, `512x512`) in `/public`
+13. **Pagination / infinite scroll** — once 50+ restaurants, single page load will get slow
+14. **Admin search** — no way to search/filter pending verification requests in the admin dashboard if volume grows
