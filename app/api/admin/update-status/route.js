@@ -89,6 +89,17 @@ export async function POST(request) {
 
     await adminDb.collection('verification_requests').doc(reqId).set({ status }, { merge: true });
 
+    // Remove restaurant listing if rejected (in case it was previously approved)
+    if (status === 'rejected') {
+      const existing = await adminDb.collection('restaurants')
+        .where('verificationRequestId', '==', reqId)
+        .limit(1)
+        .get();
+      if (!existing.empty) {
+        await existing.docs[0].ref.delete();
+      }
+    }
+
     // Auto-create restaurant listing on approval (transactional to prevent duplicates)
     if (status === 'approved') {
       const reqSnap = await adminDb.collection('verification_requests').doc(reqId).get();
