@@ -25,6 +25,7 @@ export default function Home() {
   const autoResumeDisabled = useRef(false);
   const [pendingOwnerDashboard, setPendingOwnerDashboard] = useState(false);
   const pendingSubscriptionReturn = useRef(false);
+  const pendingSubscribeReturn = useRef(false);
   const [showNoOwnerModal, setShowNoOwnerModal] = useState(false);
   const [returningFromStripe, setReturningFromStripe] = useState(false);
 
@@ -149,6 +150,12 @@ export default function Home() {
       setReturningFromStripe(true);
       window.history.replaceState({}, '', '/');
     }
+    // Detect cancel/back from Stripe checkout (?subscribe=1) — return to subscription screen
+    if (params.get('subscribe') === '1') {
+      pendingSubscribeReturn.current = true;
+      autoResumeDisabled.current = true;
+      window.history.replaceState({}, '', '/');
+    }
   }, []);
 
   // Complete onboarding and go to dashboard once user is confirmed after Stripe return
@@ -162,6 +169,14 @@ export default function Home() {
     setView('owner-dashboard');
     setOwnerStep(null);
   }, [user?.uid, userRole]);
+
+  // Return from Stripe cancel/back (?subscribe=1) — put owner back on subscription screen
+  useEffect(() => {
+    if (!pendingSubscribeReturn.current || !user || !userRole) return;
+    if (userRole !== 'owner' || onboardingComplete) return;
+    pendingSubscribeReturn.current = false;
+    setOwnerStep('subscription');
+  }, [user?.uid, userRole, onboardingComplete]);
 
   // Redirect to dashboard after "Already listed? Sign in" button triggers sign-in
   useEffect(() => {

@@ -234,6 +234,13 @@ export default function OwnerDashboard({
                   Your verification was rejected. Please contact us at <span className="text-red-400">support@halalgotos.com</span> for more information.
                 </p>
               )}
+              {certDaysLeft !== null && certDaysLeft < 30 && (
+                <p className={`text-sm bg-opacity-5 border rounded-xl px-4 py-3 ${certDaysLeft < 0 ? 'text-red-400 bg-red-500/5 border-red-500/15' : 'text-yellow-400 bg-yellow-500/5 border-yellow-500/15'}`}>
+                  {certDaysLeft < 0
+                    ? '⚠ Your halal certificate has expired. Please renew your certification and contact us to update your listing.'
+                    : `⚠ Your halal certificate expires in ${certDaysLeft} day${certDaysLeft === 1 ? '' : 's'}. Please renew it soon to keep your listing active.`}
+                </p>
+              )}
               {!verificationRequest && (
                 <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-5 space-y-4">
                   <div className="flex items-start gap-3">

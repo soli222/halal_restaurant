@@ -1,6 +1,6 @@
 import Toast from '../Toast';
 import { CUISINES, CUISINE_IMAGES, DEFAULT_FOOD_IMAGE } from '../../constants';
-import { getOpenStatus, certExpiryStatus, formatTime } from '../../utils/restaurant';
+import { getOpenStatus, formatTime } from '../../utils/restaurant';
 
 export default function HomeView({
   // Auth
@@ -480,7 +480,6 @@ export default function HomeView({
             </div>
           ) : (
             sortedFiltered.map(rest => {
-              const certStatus = certExpiryStatus(rest.certExpiryDate);
               const stats = reviewStats[rest.id];
               const openStatus = getOpenStatus(rest.hours);
               return (
@@ -524,13 +523,7 @@ export default function HomeView({
                       </button>
                     </div>
                     <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                      {certStatus === 'expired' ? (
-                        <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-red-500/90 backdrop-blur-sm text-white">⚠ Cert Expired</span>
-                      ) : certStatus === 'expiring' ? (
-                        <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-yellow-500/90 backdrop-blur-sm text-black">⚠ Expiring Soon</span>
-                      ) : (
-                        <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-green-500/90 backdrop-blur-sm text-white">✓ Halal</span>
-                      )}
+                      <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-green-500/90 backdrop-blur-sm text-white">✓ Halal</span>
                     </div>
                     {openStatus && (() => {
                       const dotColor = openStatus.status === 'open' ? 'bg-green-400' : openStatus.status === 'closing' ? 'bg-yellow-400' : 'bg-gray-500';

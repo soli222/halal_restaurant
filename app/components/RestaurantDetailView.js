@@ -2,7 +2,7 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Toast from './Toast';
 import { RATING_OPTIONS, RATING_STYLES, DAYS } from '../constants';
-import { getOpenStatus, formatTime, certExpiryStatus } from '../utils/restaurant';
+import { getOpenStatus, formatTime } from '../utils/restaurant';
 
 const RestaurantLocationMap = dynamic(() => import('./RestaurantLocationMap'), { ssr: false });
 
@@ -107,12 +107,7 @@ export default function RestaurantDetailView({
         <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/40 to-transparent" />
         {/* Cert badge overlay */}
         <div className="absolute top-4 right-4">
-          {(() => {
-            const status = certExpiryStatus(selected.certExpiryDate);
-            if (status === 'expired') return <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-red-500/80 text-white">⚠ Cert Expired</span>;
-            if (status === 'expiring') return <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-yellow-500/80 text-black">⚠ Expiring Soon</span>;
-            return <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-green-500 text-white">✓ Halal Certified</span>;
-          })()}
+          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-green-500 text-white">✓ Halal Certified</span>
         </div>
         {/* Restaurant info over gradient */}
         <div className="absolute bottom-0 left-0 right-0 px-4 pb-5">
@@ -156,19 +151,11 @@ export default function RestaurantDetailView({
                   #{selected.certificationNumber}
                 </span>
               )}
-              {selected.certExpiryDate && (() => {
-                const status = certExpiryStatus(selected.certExpiryDate);
-                const colorClass = status === 'expired'
-                  ? 'bg-red-500/10 text-red-400 border-red-500/20'
-                  : status === 'expiring'
-                  ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-                  : 'bg-green-500/10 text-green-400 border-green-500/20';
-                return (
-                  <span className={`text-xs px-2.5 py-1 rounded-full border ${colorClass}`}>
-                    Expires {new Date(selected.certExpiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </span>
-                );
-              })()}
+              {selected.certExpiryDate && (
+                <span className="text-xs px-2.5 py-1 rounded-full border bg-white/5 text-gray-400 border-white/10">
+                  Expires {new Date(selected.certExpiryDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+              )}
             </div>
           )}
           {reviews.length > 0 && (() => {

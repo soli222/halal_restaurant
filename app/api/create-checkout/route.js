@@ -40,7 +40,7 @@ export async function POST(request) {
       },
       metadata: { userId },
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/?subscribed=1`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/?subscribe=1`,
     });
 
     return Response.json({ url: session.url });
