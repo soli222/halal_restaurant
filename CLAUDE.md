@@ -32,7 +32,7 @@ This is a **Next.js 14 App Router** project — all routes live under `app/`.
 
 - `app/page.js` — Thin orchestrator. Composes all hooks, owns top-level state (`view`, `ownerStep`, `returningFromStripe`), and renders the correct view component based on state. Does **not** contain UI directly.
 - `app/review/[id]/page.js` — Standalone shareable review page for a single restaurant (accessed via QR code or direct link).
-- `app/admin/page.js` — Admin-only dashboard for approving/rejecting halal verification requests and managing review reports. Has two tabs: Verifications and Reports. Admin role is checked client-side via `users/{uid}.role === 'admin'` in Firestore, but all write actions go through `/api/admin/update-status` which re-verifies server-side. To grant admin access, manually set `role: 'admin'` on the user document in Firestore — there is no self-elevation path. Features: real-time `onSnapshot` listener for new requests, amber alert banner showing pending count, NEW badge on submissions within 24h, document lightbox with comparison panel, verification checklist (6 items, local session state), and registry lookup link (Google search for cert number + certifying body).
+- `app/admin/page.js` — Admin-only dashboard for approving/rejecting halal verification requests and managing review reports. Has two tabs: Verifications and Reports. Verifications tab has three sub-tabs: Pending (both Approve/Reject buttons), Approved (Reject listing only), Rejected (Approve listing only) — cards move between sub-tabs automatically when status changes. Admin role is checked client-side via `users/{uid}.role === 'admin'` in Firestore, but all write actions go through `/api/admin/update-status` which re-verifies server-side. To grant admin access, manually set `role: 'admin'` on the user document in Firestore — there is no self-elevation path. Features: real-time `onSnapshot` listener for new requests, amber alert banner showing pending count, NEW badge on submissions within 24h, document lightbox with comparison panel, verification checklist (6 items, local session state), and registry lookup link (Google search for cert number + certifying body).
 - `app/privacy/page.js` — Privacy Policy page.
 - `app/terms/page.js` — Terms of Use page.
 - `app/faq/page.js` — FAQ page with 5 sections (General, Halal Verification, Reviews, Restaurant Owners, Account & Privacy). Uses native `<details>`/`<summary>` accordion — no JS required.
@@ -260,18 +260,25 @@ Copy `.env.local.example` to `.env.local`. Required variables:
    - Firestore security rules already deployed and active
    - `halalgotos.com` and `www.halalgotos.com` added to Firebase authorized domains
 
-4. **Admin account** ⏳ Pending
-   - Need to sign in to `halalgotos.com` first to create the user document
-   - Then go to Firebase Console → Firestore → `users` collection → find your UID doc → set `role: 'admin'`
-   - Verify admin dashboard works at `halalgotos.com/admin`
+4. **Admin account** ✅ Complete
+   - Signed in at `halalgotos.com`, set `role: 'admin'` in Firestore
+   - Admin dashboard working at `halalgotos.com/admin`
+   - Fixed 500 error on approve/reject (Firebase private key format in Vercel)
+   - Added Pending/Approved/Rejected sub-tabs to Verifications tab
 
 5. **Anthropic API key** ⏳ Pending
    - Not yet set in Vercel — image moderation and AI summaries are currently disabled
    - Get key from `console.anthropic.com` → API Keys → Create Key (`sk-ant-...`)
    - Add as `ANTHROPIC_API_KEY` in Vercel env vars → redeploy
 
-6. **Seed content** ⏳ Pending
-   - Site is live but has no restaurants — need at least a few approved listings before promoting
+6. **OAuth consent screen** ✅ Complete
+   - App name set to `Halalgotos` in Google Cloud Console → Branding
+   - Homepage, privacy policy, and terms of service links added
+   - `halalgotos.com` added to authorized domains
+   - Popup will update within a few hours (Google caches consent screen)
+
+7. **Seed content** ⏳ Pending
+   - Site is live but has no real restaurants — need at least a few approved listings before promoting
    - Submit test restaurants through the onboarding flow and approve via admin dashboard
 
 ### 🟡 Should-have (high impact, low effort)
