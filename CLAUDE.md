@@ -243,52 +243,61 @@ Copy `.env.local.example` to `.env.local`. Required variables:
 
 ### 🔴 Must-have (blockers)
 
-1. **Vercel deployment**
-   - Connect GitHub repo to Vercel, set all env vars
-   - Connect `halalgotos.com` domain in Vercel
-   - Update `NEXT_PUBLIC_APP_URL` to `https://halalgotos.com`
+1. **Vercel deployment** ✅ Complete
+   - Deployed at `halalgotos.com` — site is live and accessible
+   - All env vars set in Vercel (except `ANTHROPIC_API_KEY` — pending)
+   - `NEXT_PUBLIC_APP_URL` set to `https://halalgotos.com`
 
-2. **Stripe live keys**
-   - Swap test keys for live keys in Vercel env vars
-   - Update Stripe webhook endpoint to `https://halalgotos.com/api/webhook`
-   - Test the full subscription flow end-to-end with a real card before launch
+2. **Stripe live keys** ✅ Complete
+   - Live secret key (`sk_live_...`) set in Vercel
+   - Live price IDs set: Basic `price_1TUz6KJDRCusTIGkgmSTUI89`, Pro `price_1TUz6IJDRCusTIGk33DMOeOM`
+   - Webhook registered at `https://halalgotos.com/api/webhook` — 4 events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`
+   - `STRIPE_WEBHOOK_SECRET` (`whsec_...`) set in Vercel
+   - ⚠️ Stripe account payout review in progress (2-3 days) — payments will process but payouts held until approved
+   - ⚠️ Still need to test the full subscription flow end-to-end with a real card
 
-3. **Firebase production setup**
-   - Deploy Firestore security rules to Firebase Console (default rules expire)
-   - Add `halalgotos.com` to Firebase authorized domains
+3. **Firebase production setup** ✅ Complete
+   - Firestore security rules already deployed and active
+   - `halalgotos.com` and `www.halalgotos.com` added to Firebase authorized domains
 
-4. **Admin account**
-   - Manually set `role: 'admin'` on the owner's Firestore user document in production
-   - Verify the admin dashboard works on prod before going live
+4. **Admin account** ⏳ Pending
+   - Need to sign in to `halalgotos.com` first to create the user document
+   - Then go to Firebase Console → Firestore → `users` collection → find your UID doc → set `role: 'admin'`
+   - Verify admin dashboard works at `halalgotos.com/admin`
 
-5. **Seed content**
-   - Have at least a handful of approved restaurants visible at launch — an empty directory kills first impressions
+5. **Anthropic API key** ⏳ Pending
+   - Not yet set in Vercel — image moderation and AI summaries are currently disabled
+   - Get key from `console.anthropic.com` → API Keys → Create Key (`sk-ant-...`)
+   - Add as `ANTHROPIC_API_KEY` in Vercel env vars → redeploy
+
+6. **Seed content** ⏳ Pending
+   - Site is live but has no restaurants — need at least a few approved listings before promoting
+   - Submit test restaurants through the onboarding flow and approve via admin dashboard
 
 ### 🟡 Should-have (high impact, low effort)
 
-6. **Resend (email)** ✅ Done locally
+7. **Resend (email)** ✅ Complete
    - Domain `halalgotos.com` verified in Resend — emails send from `notifications@halalgotos.com`
-   - `RESEND_API_KEY` and `RESEND_FROM_EMAIL` set in `.env.local`
-   - Still need to add both vars to **Vercel environment variables** when deploying
+   - `RESEND_API_KEY` and `RESEND_FROM_EMAIL` set in Vercel env vars
    - 3 automated emails: submission confirmation, approval, rejection
 
-7. **Error monitoring (Sentry)**
-   - No error visibility in prod without this — free Sentry project covers it
-   - Install `@sentry/nextjs`, run `npx @sentry/wizard@latest -i nextjs`, add `SENTRY_DSN` env var
-   - See: https://docs.sentry.io/platforms/javascript/guides/nextjs/
+8. **Error monitoring (Sentry)** — deferred, revisit post-launch
+   - Sentry free tier is only 14 days trial — not worth setting up yet
+   - Use Vercel's built-in Runtime Logs in the meantime
 
-8. **Rate limiting**
+9. **Rate limiting**
    - No rate limiting on API routes yet — at minimum protect `/api/create-checkout` and `/api/summarize`
    - Recommended: Upstash Redis + `@upstash/ratelimit` middleware, or Vercel/Cloudflare layer
 
-9. **SEO basics**
-   - No `sitemap.xml` or `robots.txt` — add so search engines can index restaurant pages
-   - No Open Graph / social preview image — links shared on WhatsApp/Twitter show blank previews
+10. **SEO basics**
+    - No `sitemap.xml` or `robots.txt` — add so search engines can index restaurant pages
+    - No Open Graph / social preview image — links shared on WhatsApp/Twitter show blank previews
+    - Note: new domains are sometimes blocked by DNS filters as "New Domains" category — resolves naturally as domain ages
 
 ### 🟢 Nice-to-have (post-launch fine)
 
-10. **Vercel Analytics** — free, one line to add (`import { Analytics } from '@vercel/analytics/react'` in `layout.js`), gives real visitor data
-11. **Custom 404 page** — currently falls back to Next.js default; add `app/not-found.js`
-12. **PWA icons** — verify `manifest.json` has proper sized icons (`192x192`, `512x512`) in `/public`
-13. **Pagination / infinite scroll** — once 50+ restaurants, single page load will get slow
-14. **Admin search** — no way to search/filter pending verification requests in the admin dashboard if volume grows
+11. **Vercel Analytics** — free, one line to add (`import { Analytics } from '@vercel/analytics/react'` in `layout.js`), gives real visitor data
+12. **Custom 404 page** — currently falls back to Next.js default; add `app/not-found.js`
+13. **PWA icons** — verify `manifest.json` has proper sized icons (`192x192`, `512x512`) in `/public`
+14. **Pagination / infinite scroll** — once 50+ restaurants, single page load will get slow
+15. **Admin search** — no way to search/filter pending verification requests in the admin dashboard if volume grows
