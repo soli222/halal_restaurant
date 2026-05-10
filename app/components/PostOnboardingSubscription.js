@@ -20,7 +20,7 @@ export default function PostOnboardingSubscription({ handleSubscribe, loadingSub
         {/* Plan cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {/* Basic */}
-          <div className="bg-[#111111] border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
+          <div className="bg-[#111111] border-2 border-green-500/60 rounded-2xl p-6 flex flex-col gap-4 shadow-[0_0_32px_rgba(34,197,94,0.1)]">
             <div>
               <p className="text-sm font-medium text-gray-400">Basic</p>
               <p className="mt-1 flex items-end gap-1">
@@ -42,7 +42,7 @@ export default function PostOnboardingSubscription({ handleSubscribe, loadingSub
             <button
               onClick={() => handleSubscribe('basic')}
               disabled={!!loadingSub}
-              className="w-full bg-white/10 hover:bg-white/20 active:scale-95 text-white font-semibold py-3 rounded-xl text-sm transition-all duration-200 disabled:opacity-50"
+              className="w-full bg-green-500 hover:bg-green-600 active:scale-95 text-white font-semibold py-3 rounded-xl text-sm transition-all duration-200 disabled:opacity-50 shadow-lg shadow-green-500/20"
             >
               {loadingSub === 'basic' ? 'Redirecting…' : 'Start free trial'}
             </button>
