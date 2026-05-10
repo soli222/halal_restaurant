@@ -202,6 +202,7 @@ export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [activeTab, setActiveTab] = useState('verifications');
+  const [verificationFilter, setVerificationFilter] = useState('pending');
   const [requests, setRequests] = useState([]);
   const [loadingReqs, setLoadingReqs] = useState(false);
   const [actionLoading, setActionLoading] = useState({});
@@ -311,6 +312,12 @@ export default function AdminPage() {
   }
 
   const pendingVerifications = requests.filter(r => !r.status || r.status === 'pending');
+  const approvedVerifications = requests.filter(r => r.status === 'approved');
+  const rejectedVerifications = requests.filter(r => r.status === 'rejected');
+  const filteredRequests =
+    verificationFilter === 'approved' ? approvedVerifications :
+    verificationFilter === 'rejected' ? rejectedVerifications :
+    pendingVerifications;
   const pendingReports = reports.filter(r => r.status === 'pending');
 
   function isNew(req) {
@@ -391,20 +398,54 @@ export default function AdminPage() {
             ))}
           </div>
 
+          {/* Verification sub-tabs */}
+          {activeTab === 'verifications' && (
+            <div className="flex gap-1 bg-white/[0.03] border border-white/[0.06] p-1 rounded-xl">
+              {[
+                { id: 'pending', label: 'Pending', count: pendingVerifications.length, color: 'amber' },
+                { id: 'approved', label: 'Approved', count: approvedVerifications.length, color: 'green' },
+                { id: 'rejected', label: 'Rejected', count: rejectedVerifications.length, color: 'red' },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setVerificationFilter(tab.id)}
+                  className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all duration-200 flex items-center justify-center gap-1.5 ${
+                    verificationFilter === tab.id ? 'bg-[#1a1a1a] text-white' : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  {tab.label}
+                  {tab.count > 0 && (
+                    <span className={`text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center leading-none ${
+                      tab.color === 'amber' ? 'bg-amber-500 text-black' :
+                      tab.color === 'green' ? 'bg-green-500/20 text-green-400' :
+                      'bg-red-500/20 text-red-400'
+                    }`}>
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Verifications tab — empty states */}
           {activeTab === 'verifications' && loadingReqs && requests.length === 0 && (
             <div className="flex items-center justify-center py-16">
               <div className="w-6 h-6 border-2 border-green-500/40 border-t-green-500 rounded-full animate-spin" />
             </div>
           )}
-          {activeTab === 'verifications' && !loadingReqs && requests.length === 0 && (
+          {activeTab === 'verifications' && !loadingReqs && filteredRequests.length === 0 && (
             <div className="bg-[#111111] border border-white/5 rounded-2xl p-12 text-center">
-              <p className="text-gray-400 font-medium">No verification requests yet</p>
+              <p className="text-gray-400 font-medium">
+                {verificationFilter === 'pending' ? 'No pending requests' :
+                 verificationFilter === 'approved' ? 'No approved listings yet' :
+                 'No rejected requests'}
+              </p>
             </div>
           )}
 
           {/* Verification request cards */}
-          {activeTab === 'verifications' && requests.map(req => {
+          {activeTab === 'verifications' && filteredRequests.map(req => {
             const isPending = !req.status || req.status === 'pending';
             const checked = checkedCount(req.id);
             const allChecked = checked === CHECKLIST_ITEMS.length;
@@ -617,22 +658,44 @@ export default function AdminPage() {
 
                 {/* Approve / Reject */}
                 <div className="flex items-center gap-2 pt-1">
-                  <button
-                    onClick={() => updateStatus(req.id, 'approved')}
-                    disabled={req.status === 'approved' || actionLoading[req.id]}
-                    className="bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 text-sm font-medium px-4 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {actionLoading[req.id] ? '…' : 'Approve'}
-                  </button>
-                  <button
-                    onClick={() => updateStatus(req.id, 'rejected')}
-                    disabled={req.status === 'rejected' || actionLoading[req.id]}
-                    className="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-medium px-4 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {actionLoading[req.id] ? '…' : 'Reject'}
-                  </button>
-                  {isPending && !allChecked && (
-                    <p className="text-xs text-gray-600 ml-1">{CHECKLIST_ITEMS.length - checked} check{CHECKLIST_ITEMS.length - checked !== 1 ? 's' : ''} remaining</p>
+                  {verificationFilter === 'pending' && (
+                    <>
+                      <button
+                        onClick={() => updateStatus(req.id, 'approved')}
+                        disabled={actionLoading[req.id]}
+                        className="bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 text-sm font-medium px-4 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {actionLoading[req.id] ? '…' : 'Approve'}
+                      </button>
+                      <button
+                        onClick={() => updateStatus(req.id, 'rejected')}
+                        disabled={actionLoading[req.id]}
+                        className="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-medium px-4 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {actionLoading[req.id] ? '…' : 'Reject'}
+                      </button>
+                      {!allChecked && (
+                        <p className="text-xs text-gray-600 ml-1">{CHECKLIST_ITEMS.length - checked} check{CHECKLIST_ITEMS.length - checked !== 1 ? 's' : ''} remaining</p>
+                      )}
+                    </>
+                  )}
+                  {verificationFilter === 'approved' && (
+                    <button
+                      onClick={() => updateStatus(req.id, 'rejected')}
+                      disabled={actionLoading[req.id]}
+                      className="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-medium px-4 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {actionLoading[req.id] ? '…' : 'Reject listing'}
+                    </button>
+                  )}
+                  {verificationFilter === 'rejected' && (
+                    <button
+                      onClick={() => updateStatus(req.id, 'approved')}
+                      disabled={actionLoading[req.id]}
+                      className="bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 text-sm font-medium px-4 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {actionLoading[req.id] ? '…' : 'Approve listing'}
+                    </button>
                   )}
                 </div>
               </div>
