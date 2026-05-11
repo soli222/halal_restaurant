@@ -231,7 +231,7 @@ export default function OwnerDashboard({
               )}
               {status === 'rejected' && (
                 <p className="text-sm text-gray-400 bg-red-500/5 border border-red-500/15 rounded-xl px-4 py-3">
-                  Your verification was rejected. Please contact us at <span className="text-red-400">support@halalgotos.com</span> for more information.
+                  Your verification was rejected. Please contact us at <span className="text-red-400">halalgotos@gmail.com</span> for more information.
                 </p>
               )}
               {certDaysLeft !== null && certDaysLeft < 30 && (

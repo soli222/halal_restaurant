@@ -150,7 +150,7 @@ export async function POST(request) {
       status === 'approved'
         ? 'Your restaurant verification has been approved! Your listing is now live.'
         : status === 'rejected'
-        ? 'Your restaurant verification was not approved. Please contact support@halalgotos.com for more info.'
+        ? 'Your restaurant verification was not approved. Please contact halalgotos@gmail.com for more info.'
         : null;
     if (notifMessage) {
       adminDb
