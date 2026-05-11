@@ -34,10 +34,11 @@ export const RATING_STYLES = {
 
 export const CERTIFYING_BODIES = ['ISNA', 'IFANCA', 'HFA', 'MAS', 'Local Mosque', 'Other'];
 
-export const CUISINES = ['All', 'Pakistani', 'Mediterranean', 'BBQ', 'Coffee Shop', 'American Halal', 'Indian', 'Persian', 'Middle Eastern', 'Lebanese', 'Afghan', 'Indonesian', 'Ethiopian', 'Burgers'];
+export const CUISINES = ['All', 'Pakistani', 'Bangladeshi', 'Mediterranean', 'BBQ', 'Coffee Shop', 'American Halal', 'Indian', 'Persian', 'Middle Eastern', 'Lebanese', 'Afghan', 'Indonesian', 'Ethiopian', 'Burgers'];
 
 export const CUISINE_IMAGES = {
   'Pakistani':      'https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=400&h=300&fit=crop&q=80',
+  'Bangladeshi':    'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&h=300&fit=crop&q=80',
   'Indian':         'https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=400&h=300&fit=crop&q=80',
   'Mediterranean':  'https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=300&fit=crop&q=80',
   'BBQ':            'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=400&h=300&fit=crop&q=80',
