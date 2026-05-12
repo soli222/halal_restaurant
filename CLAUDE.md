@@ -30,7 +30,7 @@ This is a **Next.js 14 App Router** project — all routes live under `app/`.
 
 ### Pages
 
-- `app/page.js` — Thin orchestrator. Composes all hooks, owns top-level state (`view`, `ownerStep`, `returningFromStripe`), and renders the correct view component based on state. Does **not** contain UI directly.
+- `app/page.js` — Thin orchestrator. Composes all hooks, owns top-level state (`view`, `ownerStep`, `returningFromStripe`), and renders the correct view component based on state. Does **not** contain UI directly. Detects `?subscribed=1` (Stripe success) and `?subscribe=1` (Stripe cancel/back) on mount — the latter sets `pendingSubscribeReturn` ref and returns the owner to `ownerStep='subscription'` instead of the homepage.
 - `app/review/[id]/page.js` — Standalone shareable review page for a single restaurant (accessed via QR code or direct link).
 - `app/admin/page.js` — Admin-only dashboard for approving/rejecting halal verification requests and managing review reports. Has two tabs: Verifications and Reports. Verifications tab has three sub-tabs: Pending (both Approve/Reject buttons), Approved (Reject listing only), Rejected (Approve listing only) — cards move between sub-tabs automatically when status changes. Admin role is checked client-side via `users/{uid}.role === 'admin'` in Firestore, but all write actions go through `/api/admin/update-status` which re-verifies server-side. To grant admin access, manually set `role: 'admin'` on the user document in Firestore — there is no self-elevation path. Features: real-time `onSnapshot` listener for new requests, amber alert banner showing pending count, NEW badge on submissions within 24h, document lightbox with comparison panel, verification checklist (6 items, local session state), and registry lookup link (Google search for cert number + certifying body).
 - `app/privacy/page.js` — Privacy Policy page.
@@ -73,8 +73,7 @@ All non-webhook API routes require a valid Firebase ID token in the `Authorizati
 - `app/api/webhook/route.js` — Stripe webhook handler; verifies Stripe signature, writes subscription status/plan to `subscriptions/{userId}` in Firestore via Admin SDK. On `customer.subscription.deleted`, writes `cancelledAt` timestamp. No auth token required (called by Stripe).
 - `app/api/notify-owner/route.js` — Sends email notification to owner when a new review is posted. Validates `rating` against the allowed enum and caps `reviewText` at 2000 chars. All user content is HTML-escaped before being embedded in the email.
 - `app/api/notify-verification/route.js` — Sends a "submission received" confirmation email to the restaurant owner immediately after they submit their verification request. Requires Firebase ID token. If `RESEND_API_KEY` is not set, skips silently without breaking the flow.
-- `app/api/admin/update-status/route.js` — Also sends approval or rejection emails directly via Resend when admin approves/rejects a request (fire-and-forget, won't break the approval flow if email fails).
-- `app/api/admin/update-status/route.js` — Server-side admin endpoint for approving/rejecting verification requests. Verifies Firebase token AND checks `users/{uid}.role === 'admin'` in Firestore before allowing any write. Validates `status` against `['approved', 'rejected', 'pending']`. **On approval, automatically creates a restaurant document** in the `restaurants` collection from the verification request data (idempotent — checks for existing `verificationRequestId` first). Restaurant document includes `streetAddress`, `city`, `state`, `zip`, and a combined `location` string. Also sends an in-app notification to the owner via `notifications/{userId}/items`.
+- `app/api/admin/update-status/route.js` — Server-side admin endpoint for approving/rejecting verification requests. Verifies Firebase token AND checks `users/{uid}.role === 'admin'` in Firestore before allowing any write. Validates `status` against `['approved', 'rejected', 'pending']`. **On approval, automatically creates a restaurant document** in the `restaurants` collection from the verification request data (idempotent — checks for existing `verificationRequestId` first). Restaurant document includes `streetAddress`, `city`, `state`, `zip`, and a combined `location` string. **On rejection, automatically deletes the restaurant document** (if one exists with a matching `verificationRequestId`) so rejected listings are removed from the public site immediately. Also sends an in-app notification to the owner via `notifications/{userId}/items` and sends approval/rejection emails via Resend (fire-and-forget).
 
 ### Libraries
 
@@ -143,7 +142,9 @@ useEffect(() => {
 ```
 
 ### Stripe return flow
-After Stripe Checkout, the user is redirected to `/?subscribed=1`. On mount, `page.js` detects this param, sets `returningFromStripe: true` (shows a loading spinner — prevents homepage flash), and stores a `pendingSubscriptionReturn` ref. When Firebase auth resolves, `completeOnboarding()` is called and the user is sent to the owner dashboard. The `?subscribed=1` param is cleared from the URL with `window.history.replaceState`.
+After Stripe Checkout success, the user is redirected to `/?subscribed=1`. On mount, `page.js` detects this param, sets `returningFromStripe: true` (shows a loading spinner — prevents homepage flash), and stores a `pendingSubscriptionReturn` ref. When Firebase auth resolves, `completeOnboarding()` is called and the user is sent to the owner dashboard. The `?subscribed=1` param is cleared from the URL with `window.history.replaceState`.
+
+If the owner presses **back** on the Stripe checkout page, they are redirected to `/?subscribe=1` (no 'd'). `page.js` detects this, sets `autoResumeDisabled` to prevent the step-1 auto-resume, and once auth resolves, puts the owner back on `ownerStep='subscription'` (the plan selection screen).
 
 ### Subscription lifecycle
 - **Active:** owner has `status: 'trialing'` or `'active'` in `subscriptions/{uid}`.
@@ -202,7 +203,7 @@ Copy `.env.local.example` to `.env.local`. Required variables:
 
 - The app is dark-mode only (`bg-[#0A0A0A]` / `bg-[#050505]`), styled with Tailwind CSS and Poppins font (applied globally in `layout.js`).
 - Rating values are `recommended`, `good`, `average`, `not_recommended` — not numeric stars.
-- Cuisine types are defined in `app/constants/index.js` (`CUISINES` array). The onboarding dropdown includes an **"Other"** option — when selected, a text input appears for the owner to type their custom cuisine. The typed value is saved as `cuisineType` in Firestore (so search works naturally) and the raw input is also saved as `cuisineOther` for admin visibility.
+- Cuisine types are defined in `app/constants/index.js` (`CUISINES` array). Current list: Pakistani, Bangladeshi, Mediterranean, BBQ, Coffee Shop, American Halal, Indian, Persian, Middle Eastern, Lebanese, Afghan, Indonesian, Ethiopian, Burgers. The onboarding dropdown also includes an **"Other"** option — when selected, a text input appears for the owner to type their custom cuisine. The typed value is saved as `cuisineType` in Firestore (so search works naturally) and the raw input is also saved as `cuisineOther` for admin visibility.
 - Stripe webhook must receive the raw request body (not parsed JSON) for signature verification — `route.js` uses `request.text()`.
 - `FIREBASE_PRIVATE_KEY` in `.env.local` must have literal `\n` replaced with actual newlines, or the Admin SDK init will fail. The `firebase-admin.js` handles this with `.replace(/\\n/g, '\n')`.
 - Firestore composite index required on `reviews` collection: `(restaurantId ASC, createdAt DESC)`. Create it via the link in the browser console error if missing.
@@ -250,11 +251,10 @@ Copy `.env.local.example` to `.env.local`. Required variables:
 
 2. **Stripe live keys** ✅ Complete
    - Live secret key (`sk_live_...`) set in Vercel
-   - Live price IDs set: Basic `price_1TUz6KJDRCusTIGkgmSTUI89`, Pro `price_1TUz6IJDRCusTIGk33DMOeOM`
+   - Live price IDs confirmed and set in Vercel (`STRIPE_PRICE_ID` = Basic, `STRIPE_PRO_PRICE_ID` = Pro) — note: price IDs must come from the same Stripe account as the secret key (test mode IDs will not work in live mode)
    - Webhook registered at `https://halalgotos.com/api/webhook` — 4 events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`
    - `STRIPE_WEBHOOK_SECRET` (`whsec_...`) set in Vercel
-   - ⚠️ Stripe account payout review in progress (2-3 days) — payments will process but payouts held until approved
-   - ⚠️ Still need to test the full subscription flow end-to-end with a real card
+   - ✅ Full subscription flow tested end-to-end with a real card in production — checkout, webhook, Firestore update, and dashboard all confirmed working
 
 3. **Firebase production setup** ✅ Complete
    - Firestore security rules already deployed and active

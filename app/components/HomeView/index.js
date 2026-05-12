@@ -114,52 +114,17 @@ export default function HomeView({
         {/* Informational sections — shown to customers and logged-out visitors only */}
         {!selected && (!user || userRole === 'customer') && (
           <div className="space-y-10">
-            {/* How Halalgotos Works */}
-            <div className="space-y-5">
-              <h2 className="text-base font-bold text-white text-center tracking-tight">How Halalgotos Works</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                  { icon: '🔍', title: 'Find', desc: 'Browse restaurants in your city that have been verified for halal compliance.' },
-                  { icon: '✅', title: 'Trust', desc: 'Read real, honest reviews written by the Muslim community, for the Muslim community.' },
-                  { icon: '🍽️', title: 'Dine', desc: 'Visit with confidence knowing every certification on Halalgotos has been checked.' },
-                ].map(({ icon, title, desc }) => (
-                  <div key={title} className="bg-[#111111] border border-white/[0.06] rounded-2xl p-5 space-y-3 text-center">
-                    <div className="text-3xl">{icon}</div>
-                    <p className="text-sm font-semibold text-white">{title}</p>
-                    <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Why Choose Halalgotos */}
-            <div className="space-y-5">
-              <h2 className="text-base font-bold text-white text-center tracking-tight">Why Choose Halalgotos?</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                  { icon: '🏅', title: 'Verified Halal Only', desc: 'Every restaurant must submit halal certification documents before their listing goes live.' },
-                  { icon: '🤝', title: 'Community Reviews', desc: 'Authentic ratings and reviews from Muslim diners — no bots, no paid placements.' },
-                  { icon: '🔄', title: 'Always Up to Date', desc: 'We track certification expiry dates and remove listings when certifications lapse.' },
-                ].map(({ icon, title, desc }) => (
-                  <div key={title} className="bg-[#111111] border border-white/[0.06] rounded-2xl p-5 space-y-3">
-                    <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-xl border border-green-500/15">{icon}</div>
-                    <p className="text-sm font-semibold text-white">{title}</p>
-                    <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Trust highlights */}
-            <div className="grid grid-cols-3 divide-x divide-white/[0.06] bg-[#111111] border border-white/[0.06] rounded-2xl overflow-hidden">
+            {/* Trust highlights — compact single row */}
+            <div className="grid grid-cols-4 divide-x divide-white/[0.06] bg-[#111111] border border-white/[0.06] rounded-2xl overflow-hidden">
               {[
-                { icon: '✅', label: 'Cert verified before listing' },
-                { icon: '🕌', label: 'Community driven reviews' },
-                { icon: '🔒', label: 'Always free for diners' },
+                { icon: '✅', label: 'Cert verified' },
+                { icon: '🕌', label: 'Muslim community' },
+                { icon: '🔒', label: 'Free for diners' },
+                { icon: '🔄', label: 'Always up to date' },
               ].map(({ icon, label }) => (
-                <div key={label} className="py-6 px-4 text-center">
-                  <p className="text-2xl">{icon}</p>
-                  <p className="text-xs text-gray-400 mt-2 leading-tight">{label}</p>
+                <div key={label} className="py-4 px-2 text-center">
+                  <p className="text-xl">{icon}</p>
+                  <p className="text-[10px] text-gray-400 mt-1.5 leading-tight">{label}</p>
                 </div>
               ))}
             </div>
