@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Toast from './Toast';
 import { RATING_OPTIONS, RATING_STYLES, DAYS } from '../constants';
@@ -45,6 +45,14 @@ export default function RestaurantDetailView({
   const [reportReason, setReportReason] = useState('spam');
   const [submittingReport, setSubmittingReport] = useState(false);
   const [reportedIds, setReportedIds] = useState(new Set());
+  const [lightboxUrl, setLightboxUrl] = useState(null);
+
+  useEffect(() => {
+    if (!lightboxUrl) return;
+    function onKey(e) { if (e.key === 'Escape') setLightboxUrl(null); }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [lightboxUrl]);
 
   const subscribed = isSubscribed();
   const pro = isPro();
@@ -570,7 +578,9 @@ export default function RestaurantDetailView({
                   </div>
                   <p className="text-gray-300 text-sm leading-relaxed pl-10">{r.text}</p>
                   {r.photoUrl && (
-                    <img src={r.photoUrl} alt="Review photo" className="mt-2 ml-10 rounded-xl object-cover border border-white/10 max-h-48 w-auto max-w-[calc(100%-2.5rem)]" />
+                    <button onClick={() => setLightboxUrl(r.photoUrl)} className="mt-2 ml-10 block text-left">
+                      <img src={r.photoUrl} alt="Review photo" className="rounded-xl object-cover border border-white/10 max-h-48 w-auto max-w-[calc(100%-2.5rem)] hover:opacity-90 transition-opacity cursor-zoom-in" />
+                    </button>
                   )}
                   {((r.certVisible !== null && r.certVisible !== undefined) || (r.familyFriendly !== null && r.familyFriendly !== undefined)) && (
                     <div className="flex flex-wrap gap-1.5 mt-2 pl-10">
@@ -694,5 +704,24 @@ export default function RestaurantDetailView({
         </div>
       </div>
     </div>
+
+    {/* Photo lightbox */}
+    {lightboxUrl && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+        onClick={() => setLightboxUrl(null)}
+      >
+        <button
+          className="absolute top-4 right-4 text-white/70 hover:text-white text-3xl leading-none"
+          onClick={() => setLightboxUrl(null)}
+        >×</button>
+        <img
+          src={lightboxUrl}
+          alt="Review photo"
+          className="max-w-full max-h-[90vh] rounded-2xl object-contain shadow-2xl"
+          onClick={e => e.stopPropagation()}
+        />
+      </div>
+    )}
   );
 }
