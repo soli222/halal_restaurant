@@ -315,7 +315,6 @@ export default function RestaurantDetailView({
                     ))}
                   </div>
                 </div>
-              </div>
           </div>
         )}
 
