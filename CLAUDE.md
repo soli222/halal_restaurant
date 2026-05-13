@@ -41,10 +41,10 @@ This is a **Next.js 14 App Router** project — all routes live under `app/`.
 
 - `app/components/HomeView/index.js` — Main homepage: hero, search/filter, restaurant grid, top rated, recently viewed, owner CTA. The informational sections and owner CTA are only shown when `!selected && (!user || userRole === 'customer' || (userRole === 'owner' && !onboardingComplete))`. Footer links to FAQ, Privacy Policy, and Terms of Use. Restaurant cards always show a "✓ Halal" green badge — cert expiry warnings are **not** shown publicly.
 - `app/components/OwnerOnboarding.js` — 5-step owner verification flow (restaurant info → halal cert → documents → online presence → review & confirm). Verification review time is **7 business days**. Step 1 collects full address: Street Address (required), City (required), State/Province (optional), ZIP/Postal Code (optional).
-- `app/components/OwnerDashboard/index.js` — Owner dashboard: verification status, linked restaurant profile editor, recent reviews, page view analytics chart, and notifications bell. Subscription management lives in a **Settings section** at the bottom (not inline). Supports cancel (with listing visibility warning + 2-step confirm), upgrade Basic→Pro, and re-subscribe after cancellation. Pro downgrade to Basic is **not allowed**. Notifications are fetched via `useNotifications`. Shows a cert expiry warning banner (yellow if within 30 days, red if expired) — cert warnings are shown **only here**, not on public-facing pages.
+- `app/components/OwnerDashboard/index.js` — Owner dashboard: verification status, linked restaurant profile editor, recent reviews, page view analytics chart, and notifications bell. Subscription management lives in a **Settings section** at the bottom (not inline). Supports cancel (with listing visibility warning + 2-step confirm), upgrade Basic→Pro, and re-subscribe after cancellation. Pro downgrade to Basic is **not allowed**. Notifications are fetched via `useNotifications`. Shows a cert expiry warning banner (yellow if within 30 days, red if expired) — cert warnings are shown **only here**, not on public-facing pages. Has a **Photo Gallery** section (up to 7 photos) in the profile editor — photos are AI-moderated before upload, stored in Firebase Storage at `restaurant_gallery/{restaurantId}/`, and saved as `galleryPhotos[]` on the restaurant Firestore document.
 - `app/components/PostOnboardingSubscription.js` — Subscription prompt shown after owner completes verification. **No "skip" option** — a paid plan is required to activate the listing.
 - `app/components/PricingView.js` — Pricing/upgrade page for customers. Plans: Basic $30/mo, Pro $50/mo.
-- `app/components/RestaurantDetailView.js` — Full restaurant page: reviews, AI summary, analytics, reply, share, report review. Accepts `setSelected` prop — the Back button calls both `setSelected(null)` and `setView('home')` to fully reset navigation state. Always shows "✓ Halal Certified" badge — cert expiry warnings are not shown to customers.
+- `app/components/RestaurantDetailView.js` — Full restaurant page: reviews, AI summary, analytics, reply, share, report review. Accepts `setSelected` prop — the Back button calls both `setSelected(null)` and `setView('home')` to fully reset navigation state. Always shows "✓ Halal Certified" badge — cert expiry warnings are not shown to customers. Shows owner gallery photos as a horizontal scrollable row at the top of the page (first thing visible after cover image) — each photo opens a full-screen lightbox. Review photos posted by customers are also clickable via the same lightbox (Escape / tap backdrop / × to close).
 - `app/components/RestaurantMap.js` / `RestaurantLocationMap.js` — Leaflet map components.
 - `app/components/Toast.js` — Toast notification renderer.
 
@@ -56,7 +56,7 @@ This is a **Next.js 14 App Router** project — all routes live under `app/`.
 - `useRestaurants` — Restaurant list, selected restaurant, recently viewed, add restaurant. Recently viewed IDs are persisted in `localStorage` under the key `halalgotos_recent`. Also logs page views to the `analytics` collection (fire-and-forget) when a restaurant is opened.
 - `useReviews` — Reviews, rating, photo upload, AI summary, speech-to-text, share, analytics, report review. All calls to `/api/summarize` and `/api/notify-owner` attach a Firebase ID token via `Authorization: Bearer <token>`. On new review submission, writes a notification to `notifications/{ownerId}/items` if the restaurant has an `ownerId`. Photo uploads are moderated via `moderateImage()` before preview is set — rejected images show a toast with the reason.
 - `useOnboarding` — Owner onboarding form state and `submitVerification` (saves to Firestore/Storage at step 5 only). Collects `ownerStreetAddress`, `ownerCity`, `ownerState`, `ownerZip` in step 1. All image/document files are moderated via `moderateImage()` at submit time before upload — submission is aborted if any file is flagged.
-- `useOwnerDashboard` — Fetches verification request, linked restaurant, recent reviews, and page view analytics from the `analytics` collection for the owner's restaurant. Manages `moderatingCover` state — cover image uploads are moderated before saving.
+- `useOwnerDashboard` — Fetches verification request, linked restaurant, recent reviews, and page view analytics from the `analytics` collection for the owner's restaurant. Manages `moderatingCover` state — cover image uploads are moderated before saving. Also manages `galleryPhotos` state (seeded from `linkedRestaurant.galleryPhotos`), `uploadingGallery`, `handleGalleryAdd` (moderates + uploads to Storage + updates Firestore), and `handleGalleryRemove` (updates Firestore array).
 - `useNotifications` — Subscribes to `notifications/{user.uid}/items` via `onSnapshot`. Only active when user is signed in. Provides `notifications`, `unreadCount`, and `markAllRead`.
 - `useSearch` — Search, cuisine/city/open-now filters, sort, suggestions, PWA install banner. Location filter is a typeahead input backed by `locationOptions` (flat list of `{ display, filterValue, type }` built from `r.city`+`r.state`, `r.state`, and `r.zip`). Exposes `locationSearch`, `showLocationDropdown`, `locationRef`, `visibleLocationOptions`, `selectLocation()`, `clearLocation()`. Main text search matches against `name`, `location`, `city`, `state`, `zip`, and `cuisine`. `handleSuggestionSelect` for city/state/zip also updates `locationSearch` display text.
 - `useToast` — Toast queue.
@@ -84,7 +84,7 @@ All non-webhook API routes require a valid Firebase ID token in the `Authorizati
 
 ### Firestore collections
 
-- `restaurants` — Restaurant documents. Fields include `name`, `city`, `state`, `zip`, `streetAddress`, `location` (combined string for legacy search), `cuisine`, `ownerId`, halal cert info, hours, urls, etc. Created automatically when a verification request is approved.
+- `restaurants` — Restaurant documents. Fields include `name`, `city`, `state`, `zip`, `streetAddress`, `location` (combined string for legacy search), `cuisine`, `ownerId`, halal cert info, hours, urls, `galleryPhotos` (array of Storage URLs, up to 7), etc. Created automatically when a verification request is approved.
 - `reviews` — Reviews top-level collection, keyed by restaurantId. Requires a composite index on `(restaurantId ASC, createdAt DESC)` — create via Firebase Console if missing.
 - `users` — User profiles; `role` is `customer`, `owner`, or `admin`. Admin role must be set manually in Firestore — no self-elevation is possible.
 - `subscriptions` — Subscription status per userId, written by Stripe webhook. Fields: `status`, `plan` (`basic`/`pro`), `amount` (3000 or 5000), `stripeSubscriptionId`, `cancelAtPeriodEnd`, `currentPeriodEnd`, `cancelledAt` (set on deletion), `updatedAt`.
@@ -108,7 +108,8 @@ Both Firestore and Storage require proper security rules — the default Firebas
 
 **Storage rules summary:**
 - `verification_proofs/{userId}/**` — authenticated read; owner write
-- `restaurant_covers/**`, `owner_covers/{userId}/**`, `review_photos/**`, `restaurant_gallery/{restaurantId}/**` — public read; authenticated write
+- `restaurant_covers/**`, `owner_covers/{userId}/**`, `review_photos/**` — public read; authenticated write
+- `restaurant_gallery/{restaurantId}/{fileName}` — public read; authenticated write
 
 **Firebase Storage requires the Blaze (pay-as-you-go) plan** — it is not available on the Spark free plan for new projects. The Blaze plan has a generous free tier and costs nothing unless quotas are exceeded.
 
@@ -202,7 +203,8 @@ Copy `.env.local.example` to `.env.local`. Required variables:
 ## Key implementation notes
 
 - The app is dark-mode only (`bg-[#0A0A0A]` / `bg-[#050505]`), styled with Tailwind CSS and Poppins font (applied globally in `layout.js`).
-- Rating values are `recommended`, `good`, `average`, `not_recommended` — not numeric stars.
+- Rating values are `recommended`, `good`, `average` — not numeric stars. `not_recommended` has been removed to keep the platform positive.
+- Review quick questions: "Was the environment vibrant and welcoming?" (stored as `certVisible`) and "Would you bring your family here?" (stored as `familyFriendly`). Both use 3-option string values: `'yes'` / `'maybe'` / `'not_really'` — **not booleans**. Old boolean values in Firestore are safely ignored.
 - Cuisine types are defined in `app/constants/index.js` (`CUISINES` array). Current list: Pakistani, Bangladeshi, Mediterranean, BBQ, Coffee Shop, American Halal, Indian, Persian, Middle Eastern, Lebanese, Afghan, Indonesian, Ethiopian, Burgers. The onboarding dropdown also includes an **"Other"** option — when selected, a text input appears for the owner to type their custom cuisine. The typed value is saved as `cuisineType` in Firestore (so search works naturally) and the raw input is also saved as `cuisineOther` for admin visibility.
 - Stripe webhook must receive the raw request body (not parsed JSON) for signature verification — `route.js` uses `request.text()`.
 - `FIREBASE_PRIVATE_KEY` in `.env.local` must have literal `\n` replaced with actual newlines, or the Admin SDK init will fail. The `firebase-admin.js` handles this with `.replace(/\\n/g, '\n')`.
@@ -267,7 +269,7 @@ Copy `.env.local.example` to `.env.local`. Required variables:
    - Added Pending/Approved/Rejected sub-tabs to Verifications tab
 
 5. **Anthropic API key** ⏳ Pending
-   - Not yet set in Vercel — image moderation and AI summaries are currently disabled
+   - Not yet set in Vercel — image moderation (owner gallery, cover photo, review photos, onboarding docs) and AI summaries are currently disabled
    - Get key from `console.anthropic.com` → API Keys → Create Key (`sk-ant-...`)
    - Add as `ANTHROPIC_API_KEY` in Vercel env vars → redeploy
 

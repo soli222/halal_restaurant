@@ -15,7 +15,6 @@ export default function RestaurantDetailView({
   setView,
   setSelected,
   userRole,
-  isSubscribed,
   isPro,
   reviews,
   reviewText, setReviewText,
@@ -54,9 +53,8 @@ export default function RestaurantDetailView({
     return () => window.removeEventListener('keydown', onKey);
   }, [lightboxUrl]);
 
-  const subscribed = isSubscribed();
   const pro = isPro();
-  const analytics = subscribed ? getAnalytics() : null;
+  const analytics = pro ? getAnalytics() : null;
   const maxDayCount = analytics ? Math.max(...analytics.days.map(d => d.count), 1) : 1;
 
   async function handleSubmitReport(reviewId) {
@@ -264,10 +262,8 @@ export default function RestaurantDetailView({
         <RestaurantLocationMap restaurant={selected} />
 
         {/* Analytics dashboard — Pro subscribers */}
-        {subscribed && (
-          <div className="relative">
-            {pro ? (
-              <div className="bg-[#111111] border border-white/5 rounded-2xl p-5 space-y-5">
+        {pro && (
+          <div className="bg-[#111111] border border-white/5 rounded-2xl p-5 space-y-5">
                 <h2 className="text-sm font-semibold text-white flex items-center gap-2">
                   <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -320,41 +316,6 @@ export default function RestaurantDetailView({
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="relative rounded-2xl overflow-hidden">
-                <div className="bg-[#111111] border border-white/5 rounded-2xl p-5 space-y-5 select-none pointer-events-none" style={{ filter: 'blur(4px)' }}>
-                  <h2 className="text-sm font-semibold text-white">Analytics</h2>
-                  <div className="flex items-center justify-between bg-[#1A1A1A] rounded-xl px-4 py-3">
-                    <span className="text-sm text-gray-400">Total reviews</span>
-                    <span className="text-2xl font-bold text-white">—</span>
-                  </div>
-                  <div className="space-y-2.5">
-                    {RATING_OPTIONS.map(opt => (
-                      <div key={opt.value} className="flex items-center gap-3">
-                        <span className="text-xs text-gray-400 w-20">{opt.label}</span>
-                        <div className="flex-1 h-2 bg-white/5 rounded-full" />
-                        <span className="text-xs text-gray-500 w-6">0</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0A0A0A]/60 rounded-2xl p-6 text-center">
-                  <div className="w-10 h-10 bg-green-500/15 rounded-full flex items-center justify-center mb-3">
-                    <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
-                  <p className="text-white font-semibold text-sm mb-1">Analytics is a Pro feature</p>
-                  <p className="text-gray-500 text-xs mb-4">Upgrade to unlock rating breakdowns and weekly trends.</p>
-                  <button
-                    onClick={() => setView('pricing')}
-                    className="bg-green-500 hover:bg-green-600 active:scale-95 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all duration-200 shadow-lg shadow-green-500/20"
-                  >
-                    Upgrade to Pro — $50/mo
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -376,52 +337,24 @@ export default function RestaurantDetailView({
         </div>
 
         {/* Advanced AI Insights — Pro subscribers */}
-        {subscribed && (
-          <div className="relative">
-            {pro ? (
-              <div className="bg-[#111111] rounded-2xl p-5 border border-green-500/30 shadow-[0_0_24px_rgba(34,197,94,0.08)]">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-semibold text-green-400 flex items-center gap-2">
-                    🔬 Advanced AI Insights
-                    <span className="text-xs bg-green-500/15 text-green-400 px-2 py-0.5 rounded-full border border-green-500/25">Pro</span>
-                  </span>
-                  <button
-                    onClick={generateAdvancedSummary}
-                    disabled={loadingAdvanced}
-                    className="text-xs bg-green-500 hover:bg-green-600 active:scale-95 text-white font-semibold px-4 py-1.5 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loadingAdvanced ? 'Analyzing...' : 'Analyze'}
-                  </button>
-                </div>
-                <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-line">
-                  {advancedSummary || 'Click Analyze for a detailed breakdown: sentiment score, top praised items, complaints, and a recommendation.'}
-                </p>
-              </div>
-            ) : (
-              <div className="relative rounded-2xl overflow-hidden">
-                <div className="bg-[#111111] rounded-2xl p-5 border border-green-500/20 space-y-2 select-none pointer-events-none" style={{ filter: 'blur(4px)' }}>
-                  <span className="text-sm font-semibold text-green-400">🔬 Advanced AI Insights</span>
-                  <p className="text-gray-400 text-sm">Sentiment score: —/10</p>
-                  <p className="text-gray-600 text-xs">Top praised: ████████ ██████ ████</p>
-                  <p className="text-gray-600 text-xs">Top complaints: ██████ ████████</p>
-                </div>
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0A0A0A]/60 rounded-2xl p-6 text-center">
-                  <div className="w-10 h-10 bg-green-500/15 rounded-full flex items-center justify-center mb-3">
-                    <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
-                  <p className="text-white font-semibold text-sm mb-1">Advanced AI Insights is a Pro feature</p>
-                  <p className="text-gray-500 text-xs mb-4">Get sentiment scores, top praised items, complaints, and actionable recommendations.</p>
-                  <button
-                    onClick={() => setView('pricing')}
-                    className="bg-green-500 hover:bg-green-600 active:scale-95 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all duration-200 shadow-lg shadow-green-500/20"
-                  >
-                    Upgrade to Pro — $50/mo
-                  </button>
-                </div>
-              </div>
-            )}
+        {pro && (
+          <div className="bg-[#111111] rounded-2xl p-5 border border-green-500/30 shadow-[0_0_24px_rgba(34,197,94,0.08)]">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-green-400 flex items-center gap-2">
+                🔬 Advanced AI Insights
+                <span className="text-xs bg-green-500/15 text-green-400 px-2 py-0.5 rounded-full border border-green-500/25">Pro</span>
+              </span>
+              <button
+                onClick={generateAdvancedSummary}
+                disabled={loadingAdvanced}
+                className="text-xs bg-green-500 hover:bg-green-600 active:scale-95 text-white font-semibold px-4 py-1.5 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loadingAdvanced ? 'Analyzing...' : 'Analyze'}
+              </button>
+            </div>
+            <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-line">
+              {advancedSummary || 'Click Analyze for a detailed breakdown: sentiment score, top praised items, complaints, and a recommendation.'}
+            </p>
           </div>
         )}
 
