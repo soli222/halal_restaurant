@@ -151,6 +151,21 @@ export default function RestaurantDetailView({
 
       <div className="max-w-[720px] mx-auto px-5 py-6 space-y-5">
 
+        {/* Photo gallery */}
+        {selected.galleryPhotos?.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+            {selected.galleryPhotos.map((url, i) => (
+              <button
+                key={i}
+                onClick={() => setLightboxUrl(url)}
+                className="flex-shrink-0 w-28 h-28 sm:w-36 sm:h-36 rounded-2xl overflow-hidden border border-white/10 hover:opacity-90 transition-opacity cursor-zoom-in"
+              >
+                <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Community stats + rating counts */}
         <div className="bg-[#111111] border border-white/5 rounded-2xl p-5 space-y-4">
           {(selected.certificationNumber || selected.certExpiryDate) && (

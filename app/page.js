@@ -338,6 +338,10 @@ export default function Home() {
         coverImagePreview={ownerDashboard.coverImagePreview}
         moderatingCover={ownerDashboard.moderatingCover}
         handleCoverChange={ownerDashboard.handleCoverChange}
+        galleryPhotos={ownerDashboard.galleryPhotos}
+        uploadingGallery={ownerDashboard.uploadingGallery}
+        handleGalleryAdd={ownerDashboard.handleGalleryAdd}
+        handleGalleryRemove={ownerDashboard.handleGalleryRemove}
         saveProfile={ownerDashboard.saveProfile}
         analyticsStats={ownerDashboard.analyticsStats}
         handleLogout={handleLogout}

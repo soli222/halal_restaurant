@@ -67,6 +67,8 @@ export function useOwnerDashboard(showToast, user) {
   const [coverImagePreview, setCoverImagePreview] = useState('');
   const [moderatingCover, setModeratingCover] = useState(false);
   const [analyticsStats, setAnalyticsStats] = useState(null);
+  const [galleryPhotos, setGalleryPhotos] = useState([]);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
 
   // Load reviews + analytics for the given restaurant and update state
   async function loadRestaurantData(rest) {
@@ -173,6 +175,7 @@ export function useOwnerDashboard(showToast, user) {
       setActiveIndex(0);
       seedEditFields(reqs[0]);
       setLinkedRestaurant(matched[0]);
+      setGalleryPhotos(matched[0]?.galleryPhotos || []);
       await loadRestaurantData(matched[0]);
 
     } catch {
@@ -189,6 +192,7 @@ export function useOwnerDashboard(showToast, user) {
     const rest = allLinkedRestaurants[index];
     seedEditFields(req);
     setLinkedRestaurant(rest);
+    setGalleryPhotos(rest?.galleryPhotos || []);
     await loadRestaurantData(rest);
   }
 
@@ -278,6 +282,52 @@ export function useOwnerDashboard(showToast, user) {
     setCoverImagePreview(URL.createObjectURL(file));
   }
 
+  async function handleGalleryAdd(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+    if (!file.type.startsWith('image/')) { showToast('Please upload an image file.', 'error'); return; }
+    if (file.size > 5 * 1024 * 1024) { showToast('Image must be under 5MB.', 'error'); return; }
+    if (galleryPhotos.length >= 7) { showToast('Maximum 7 photos allowed.', 'error'); return; }
+
+    const restId = linkedRestaurant?.id;
+    if (!restId) return;
+
+    setUploadingGallery(true);
+    try {
+      const token = await user.getIdToken();
+      const { safe, reason } = await moderateImage(file, token);
+      if (!safe) {
+        showToast(reason ? `Image rejected: ${reason}.` : 'This image isn\'t allowed on Halalgotos.', 'error');
+        return;
+      }
+      const r = storageRef(storage, `restaurant_gallery/${restId}/${Date.now()}_${file.name}`);
+      await uploadBytes(r, file);
+      const url = await getDownloadURL(r);
+      const newPhotos = [...galleryPhotos, url];
+      await updateDoc(doc(db, 'restaurants', restId), { galleryPhotos: newPhotos });
+      setGalleryPhotos(newPhotos);
+      showToast('Photo added to gallery!');
+    } catch {
+      showToast('Failed to upload photo.', 'error');
+    } finally {
+      setUploadingGallery(false);
+    }
+  }
+
+  async function handleGalleryRemove(url) {
+    const restId = linkedRestaurant?.id;
+    if (!restId) return;
+    const newPhotos = galleryPhotos.filter(p => p !== url);
+    try {
+      await updateDoc(doc(db, 'restaurants', restId), { galleryPhotos: newPhotos });
+      setGalleryPhotos(newPhotos);
+      showToast('Photo removed.');
+    } catch {
+      showToast('Failed to remove photo.', 'error');
+    }
+  }
+
   return {
     allVerificationRequests, allLinkedRestaurants, activeIndex,
     verificationRequest, linkedRestaurant, dashboardReviews,
@@ -288,6 +338,7 @@ export function useOwnerDashboard(showToast, user) {
     editMapsUrl, setEditMapsUrl,
     coverImageFile, coverImagePreview, moderatingCover,
     handleCoverChange,
+    galleryPhotos, uploadingGallery, handleGalleryAdd, handleGalleryRemove,
     fetchDashboardData, saveProfile, switchRestaurant,
     analyticsStats,
   };

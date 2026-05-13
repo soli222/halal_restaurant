@@ -108,7 +108,7 @@ Both Firestore and Storage require proper security rules — the default Firebas
 
 **Storage rules summary:**
 - `verification_proofs/{userId}/**` — authenticated read; owner write
-- `restaurant_covers/**`, `owner_covers/{userId}/**`, `review_photos/**` — public read; authenticated write
+- `restaurant_covers/**`, `owner_covers/{userId}/**`, `review_photos/**`, `restaurant_gallery/{restaurantId}/**` — public read; authenticated write
 
 **Firebase Storage requires the Blaze (pay-as-you-go) plan** — it is not available on the Spark free plan for new projects. The Blaze plan has a generous free tier and costs nothing unless quotas are exceeded.
 

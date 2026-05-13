@@ -26,6 +26,10 @@ export default function OwnerDashboard({
   coverImagePreview,
   moderatingCover = false,
   handleCoverChange,
+  galleryPhotos = [],
+  uploadingGallery = false,
+  handleGalleryAdd,
+  handleGalleryRemove,
   saveProfile,
   handleLogout,
   setView,
@@ -379,6 +383,40 @@ export default function OwnerDashboard({
                       </div>
                       <input type="file" accept="image/*" className="hidden" onChange={handleCoverChange} disabled={moderatingCover} />
                     </label>
+                  </div>
+
+                  {/* Photo gallery */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs text-gray-500 uppercase tracking-wide">Photo Gallery</label>
+                      <span className="text-xs text-gray-600">{galleryPhotos.length}/7 photos</span>
+                    </div>
+                    {galleryPhotos.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2">
+                        {galleryPhotos.map((url, i) => (
+                          <div key={i} className="relative group aspect-square">
+                            <img src={url} alt={`Gallery ${i + 1}`} className="w-full h-full object-cover rounded-xl border border-white/10" />
+                            <button
+                              onClick={() => handleGalleryRemove(url)}
+                              className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80"
+                            >×</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {galleryPhotos.length < 7 && (
+                      <label className="flex items-center gap-2 cursor-pointer group w-fit">
+                        <div className="flex items-center gap-2 bg-[#1A1A1A] border border-white/10 hover:border-amber-500/30 rounded-xl px-4 py-2.5 transition-all duration-200">
+                          <svg className="w-4 h-4 text-gray-500 group-hover:text-amber-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          <span className="text-xs text-gray-500 group-hover:text-gray-300 transition-colors">
+                            {uploadingGallery ? 'Uploading…' : 'Add photo'}
+                          </span>
+                        </div>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleGalleryAdd} disabled={uploadingGallery} />
+                      </label>
+                    )}
                   </div>
 
                   {/* Description */}
