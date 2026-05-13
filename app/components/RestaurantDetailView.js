@@ -69,6 +69,7 @@ export default function RestaurantDetailView({
   }
 
   return (
+    <>
     <div className="min-h-screen bg-[#050505] text-gray-100 relative overflow-x-hidden">
       {/* Ambient background */}
       <div className="pointer-events-none fixed inset-0 z-0" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.035) 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
@@ -723,5 +724,6 @@ export default function RestaurantDetailView({
         />
       </div>
     )}
+    </>
   );
 }
