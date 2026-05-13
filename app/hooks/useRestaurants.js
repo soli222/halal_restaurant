@@ -47,7 +47,7 @@ export function useRestaurants(user, setView, showToast) {
         if (!restaurantId) return;
         if (!stats[restaurantId]) stats[restaurantId] = { count: 0, totalScore: 0 };
         stats[restaurantId].count++;
-        const score = { recommended: 5, good: 4, average: 3, not_recommended: 1 }[rating] || 3;
+        const score = { recommended: 5, good: 4, average: 3 }[rating] || 3;
         stats[restaurantId].totalScore += score;
       });
       Object.keys(stats).forEach(id => {

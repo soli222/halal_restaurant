@@ -55,7 +55,7 @@ function BoundsFitter({ restaurants, userLocation }) {
   return null;
 }
 
-const RATING_LABELS = { recommended: '✅ Highly Recommended', good: '👍 Good', average: '😐 Average', not_recommended: '👎 Not Recommended' };
+const RATING_LABELS = { recommended: '✅ Highly Recommended', good: '👍 Good', average: '😐 Average' };
 
 export default function RestaurantMap({ restaurants, onSelect, userLocation, reviewStats = {} }) {
   const mapped = restaurants.filter(r => r.lat != null && r.lng != null);

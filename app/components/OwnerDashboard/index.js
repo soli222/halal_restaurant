@@ -6,7 +6,6 @@ const RATING_LABELS = {
   recommended:     { label: 'Highly Recommended', style: 'bg-green-500/15 border-green-500/25 text-green-400' },
   good:            { label: 'Good',                style: 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400' },
   average:         { label: 'Average',             style: 'bg-yellow-500/15 border-yellow-500/25 text-yellow-400' },
-  not_recommended: { label: 'Not Recommended',     style: 'bg-red-500/15 border-red-500/25 text-red-400' },
 };
 
 export default function OwnerDashboard({

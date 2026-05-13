@@ -167,15 +167,15 @@ export default function RestaurantDetailView({
             </div>
           )}
           {reviews.length > 0 && (() => {
-            const cvCount = reviews.filter(r => r.certVisible === true).length;
-            const cvTotal = reviews.filter(r => r.certVisible !== null && r.certVisible !== undefined).length;
-            const ffCount = reviews.filter(r => r.familyFriendly === true).length;
-            const ffTotal = reviews.filter(r => r.familyFriendly !== null && r.familyFriendly !== undefined).length;
+            const cvCount = reviews.filter(r => r.certVisible === 'yes').length;
+            const cvTotal = reviews.filter(r => r.certVisible != null).length;
+            const ffCount = reviews.filter(r => r.familyFriendly === 'yes').length;
+            const ffTotal = reviews.filter(r => r.familyFriendly != null).length;
             return (cvTotal > 0 || ffTotal > 0) ? (
               <div className="flex flex-wrap gap-2">
                 {cvTotal > 0 && (
                   <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/15">
-                    🏷 Cert visible: {Math.round((cvCount / cvTotal) * 100)}%
+                    ✨ Vibrant atmosphere: {Math.round((cvCount / cvTotal) * 100)}%
                   </span>
                 )}
                 {ffTotal > 0 && (
@@ -462,37 +462,37 @@ export default function RestaurantDetailView({
             {/* Quick questions */}
             <div className="space-y-3">
               <div>
-                <p className="text-xs text-gray-400 mb-1.5">Was the halal certification visible at the restaurant?</p>
-                <div className="flex gap-2">
-                  {[true, false].map(val => (
+                <p className="text-xs text-gray-400 mb-1.5">Was the environment vibrant and welcoming?</p>
+                <div className="flex gap-2 flex-wrap">
+                  {[{ val: 'yes', label: 'Yes' }, { val: 'maybe', label: 'Maybe or a bit' }, { val: 'not_really', label: 'Not really' }].map(({ val, label }) => (
                     <button
-                      key={String(val)}
-                      onClick={() => setCertVisible(val)}
+                      key={val}
+                      onClick={() => setCertVisible(certVisible === val ? null : val)}
                       className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
                         certVisible === val
                           ? 'bg-green-500/20 text-green-400 border border-green-500/40'
                           : 'bg-white/5 text-gray-500 border border-white/10 hover:bg-white/10'
                       }`}
                     >
-                      {val ? 'Yes' : 'No'}
+                      {label}
                     </button>
                   ))}
                 </div>
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-1.5">Would you bring your family here?</p>
-                <div className="flex gap-2">
-                  {[true, false].map(val => (
+                <div className="flex gap-2 flex-wrap">
+                  {[{ val: 'yes', label: 'Yes' }, { val: 'maybe', label: 'Maybe or a bit' }, { val: 'not_really', label: 'Not really' }].map(({ val, label }) => (
                     <button
-                      key={String(val)}
-                      onClick={() => setFamilyFriendly(val)}
+                      key={val}
+                      onClick={() => setFamilyFriendly(familyFriendly === val ? null : val)}
                       className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
                         familyFriendly === val
                           ? 'bg-green-500/20 text-green-400 border border-green-500/40'
                           : 'bg-white/5 text-gray-500 border border-white/10 hover:bg-white/10'
                       }`}
                     >
-                      {val ? 'Yes' : 'No'}
+                      {label}
                     </button>
                   ))}
                 </div>
@@ -584,14 +584,14 @@ export default function RestaurantDetailView({
                   )}
                   {((r.certVisible !== null && r.certVisible !== undefined) || (r.familyFriendly !== null && r.familyFriendly !== undefined)) && (
                     <div className="flex flex-wrap gap-1.5 mt-2 pl-10">
-                      {r.certVisible !== null && r.certVisible !== undefined && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full border ${r.certVisible ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-gray-500/10 text-gray-500 border-gray-500/20'}`}>
-                          {r.certVisible ? '🏷 Cert visible' : '🏷 Cert not visible'}
+                      {r.certVisible != null && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full border ${r.certVisible === 'yes' ? 'bg-green-500/10 text-green-400 border-green-500/20' : r.certVisible === 'maybe' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' : 'bg-gray-500/10 text-gray-500 border-gray-500/20'}`}>
+                          {r.certVisible === 'yes' ? '✨ Vibrant atmosphere' : r.certVisible === 'maybe' ? '✨ Somewhat vibrant' : '✨ Not very vibrant'}
                         </span>
                       )}
-                      {r.familyFriendly !== null && r.familyFriendly !== undefined && (
-                        <span className={`text-xs px-2 py-0.5 rounded-full border ${r.familyFriendly ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-gray-500/10 text-gray-500 border-gray-500/20'}`}>
-                          {r.familyFriendly ? '👨‍👩‍👧 Family-friendly' : '👨‍👩‍👧 Not family-friendly'}
+                      {r.familyFriendly != null && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full border ${r.familyFriendly === 'yes' ? 'bg-green-500/10 text-green-400 border-green-500/20' : r.familyFriendly === 'maybe' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' : 'bg-gray-500/10 text-gray-500 border-gray-500/20'}`}>
+                          {r.familyFriendly === 'yes' ? '👨‍👩‍👧 Family-friendly' : r.familyFriendly === 'maybe' ? '👨‍👩‍👧 Maybe family-friendly' : '👨‍👩‍👧 Not family-friendly'}
                         </span>
                       )}
                     </div>

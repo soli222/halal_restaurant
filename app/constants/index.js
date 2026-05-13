@@ -2,7 +2,6 @@ export const RATING_OPTIONS = [
   { value: 'recommended', label: '✅ Highly Recommended' },
   { value: 'good', label: '👍 Good' },
   { value: 'average', label: '😐 Average' },
-  { value: 'not_recommended', label: '👎 Not Recommended' },
 ];
 
 export const RATING_STYLES = {
@@ -23,12 +22,6 @@ export const RATING_STYLES = {
     leftBorder: 'border-l-yellow-500',
     selected: 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20',
     bar: 'bg-yellow-500',
-  },
-  not_recommended: {
-    pill: 'bg-red-500/15 text-red-400 border border-red-500/25',
-    leftBorder: 'border-l-red-500',
-    selected: 'bg-red-500 text-white shadow-lg shadow-red-500/20',
-    bar: 'bg-red-500',
   },
 };
 

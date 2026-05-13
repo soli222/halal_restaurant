@@ -8,7 +8,6 @@ const RATING_LABELS = {
   recommended: 'Highly Recommended',
   good: 'Good',
   average: 'Average',
-  not_recommended: 'Not Recommended',
 };
 
 function escapeHtml(str) {

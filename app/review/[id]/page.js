@@ -8,7 +8,6 @@ const RATING_OPTIONS = [
   { value: 'recommended', label: '✅ Highly Recommended', selected: 'bg-green-500 text-white shadow-lg shadow-green-500/20' },
   { value: 'good', label: '👍 Good', selected: 'bg-emerald-400 text-white shadow-lg shadow-emerald-400/20' },
   { value: 'average', label: '😐 Average', selected: 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/20' },
-  { value: 'not_recommended', label: '👎 Not Recommended', selected: 'bg-red-500 text-white shadow-lg shadow-red-500/20' },
 ];
 
 export default function ReviewPage({ params }) {

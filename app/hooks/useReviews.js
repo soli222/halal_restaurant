@@ -133,7 +133,7 @@ export function useReviews(user, selected, showToast, setReviewStats) {
       setPhoto(null);
       setPhotoPreview(null);
       showToast('Review posted!');
-      const _score = { recommended: 5, good: 4, average: 3, not_recommended: 1 }[rating] || 3;
+      const _score = { recommended: 5, good: 4, average: 3 }[rating] || 3;
       setReviewStats(prev => {
         const current = prev[selected.id] || { count: 0, totalScore: 0 };
         const newCount = current.count + 1;
@@ -255,7 +255,7 @@ export function useReviews(user, selected, showToast, setReviewStats) {
     const recommended = ratingCount('recommended');
     const good = ratingCount('good');
     const average = ratingCount('average');
-    const not_recommended = ratingCount('not_recommended');
+
     const now = new Date();
     const msPerDay = 86400000;
     const startOfThisWeek = new Date(now - now.getDay() * msPerDay);
@@ -279,7 +279,7 @@ export function useReviews(user, selected, showToast, setReviewStats) {
       }).length;
       days.push({ label: dayStart.toLocaleDateString('en-US', { weekday: 'short' }), count });
     }
-    return { total, recommended, good, average, not_recommended, thisWeek, lastWeek, days };
+    return { total, recommended, good, average, thisWeek, lastWeek, days };
   }
 
   return {
