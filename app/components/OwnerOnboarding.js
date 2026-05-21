@@ -70,18 +70,19 @@ export default function OwnerOnboarding({
 
       {/* Header */}
       <header className="pt-7 pb-4 px-5 flex items-center justify-between max-w-lg mx-auto">
+        <button
+          onClick={onHome}
+          className="flex items-center gap-2 text-sm font-semibold text-white bg-white/[0.07] hover:bg-white/[0.12] active:scale-95 border border-white/10 hover:border-white/20 px-4 py-2.5 rounded-xl transition-all duration-200 min-w-[44px] min-h-[44px]"
+        >
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          <span>Home</span>
+        </button>
         <div className="flex items-center gap-2 text-white font-bold text-lg">
           <span>☪️</span><span>Halalgotos</span>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="text-xs text-gray-500">Step {ownerStep} of 5</span>
-          <button
-            onClick={onHome}
-            className="text-xs text-gray-500 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-all duration-200"
-          >
-            ← Home
-          </button>
-        </div>
+        <span className="text-xs text-gray-500 tabular-nums">Step {ownerStep} of 5</span>
       </header>
 
       <main className="max-w-lg mx-auto px-5 pb-20 pt-4 space-y-6">
