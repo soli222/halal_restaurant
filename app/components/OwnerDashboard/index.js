@@ -631,7 +631,7 @@ export default function OwnerDashboard({
               const isCancelled = subscription?.status === 'canceled';
               const cancelledAt = subscription?.cancelledAt ? new Date(subscription.cancelledAt) : null;
               const daysSinceCancelled = cancelledAt ? (Date.now() - cancelledAt.getTime()) / (1000 * 60 * 60 * 24) : null;
-              const showResubscribeOffer = isCancelled && daysSinceCancelled !== null && daysSinceCancelled >= 2;
+              const showResubscribeOffer = isCancelled;
 
               return (
                 <div id="settings" className="bg-[#111111] border border-white/[0.06] rounded-2xl p-6 space-y-5">
@@ -652,15 +652,19 @@ export default function OwnerDashboard({
                       )}
                     </div>
 
-                    {/* Re-subscribe offer — shown 2+ days after cancellation */}
+                    {/* Re-subscribe offer — shown immediately after cancellation */}
                     {showResubscribeOffer && (
                       <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-5 space-y-4">
                         <div className="flex items-start gap-3">
-                          <span className="text-2xl">👋</span>
+                          <span className="text-2xl">{daysSinceCancelled !== null && daysSinceCancelled >= 2 ? '👋' : '💡'}</span>
                           <div className="space-y-1">
-                            <p className="text-sm font-semibold text-amber-400">Welcome back — ready to restore your listing?</p>
+                            <p className="text-sm font-semibold text-amber-400">
+                              {daysSinceCancelled !== null && daysSinceCancelled >= 2
+                                ? 'Welcome back — ready to restore your listing?'
+                                : 'Changed your mind? Resubscribe anytime.'}
+                            </p>
                             <p className="text-sm text-gray-400 leading-relaxed">
-                              Your restaurant data is safe with us. Resubscribe to make your listing visible to customers again and regain full access to your dashboard.
+                              Your restaurant data is safe. Resubscribe to make your listing visible to customers again and regain full access to your dashboard.
                             </p>
                           </div>
                         </div>
@@ -681,18 +685,6 @@ export default function OwnerDashboard({
                           </button>
                         </div>
                         <p className="text-xs text-gray-600">Your previous restaurant profile and reviews will be restored immediately.</p>
-                      </div>
-                    )}
-
-                    {/* Cancelled but within 2-day grace period — data safe message */}
-                    {isCancelled && !showResubscribeOffer && (
-                      <div className="flex items-start gap-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3">
-                        <svg className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <p className="text-sm text-gray-500">
-                          Your subscription has ended and your listing is currently hidden. Your data is safe — a resubscription option will appear here shortly.
-                        </p>
                       </div>
                     )}
 
