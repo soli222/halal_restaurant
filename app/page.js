@@ -473,6 +473,7 @@ export default function Home() {
     <HomeView
       user={user}
       userRole={userRole}
+      onboardingComplete={onboardingComplete}
       handleLogin={handleHeaderLogin}
       handleLogout={handleLogout}
       onStartOwnerOnboarding={() => setOwnerStep(1)}

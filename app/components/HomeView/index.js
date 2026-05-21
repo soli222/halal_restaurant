@@ -4,7 +4,7 @@ import { getOpenStatus, formatTime } from '../../utils/restaurant';
 
 export default function HomeView({
   // Auth
-  user, userRole,
+  user, userRole, onboardingComplete,
   handleLogin, handleLogout,
   onStartOwnerOnboarding,
   onOwnerSignIn,
@@ -68,6 +68,14 @@ export default function HomeView({
                   className="text-sm font-medium text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-xl transition-all duration-200"
                 >
                   Home
+                </button>
+              )}
+              {userRole === 'owner' && onboardingComplete && (
+                <button
+                  onClick={onOwnerSignIn}
+                  className="text-sm font-semibold text-green-400 hover:text-green-300 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 px-3 py-1.5 rounded-xl transition-all duration-200"
+                >
+                  My Dashboard
                 </button>
               )}
               <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full ring-2 ring-white/10" />
