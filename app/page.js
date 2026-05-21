@@ -32,7 +32,7 @@ export default function Home() {
   const { toasts, showToast } = useToast();
 
   const {
-    user, userRole, setUserRole,
+    user, authLoading, userRole, setUserRole,
     onboardingComplete,
     pendingOwnerSubmit, setPendingOwnerSubmit,
     confirmSwitchRole, setConfirmSwitchRole,
@@ -233,6 +233,15 @@ export default function Home() {
   function handleSignInToSubmit() {
     setPendingOwnerSubmit(true);
     handleLogin();
+  }
+
+  // ─── AUTH LOADING SCREEN ─────────────────────────────────────────────────
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin" />
+      </div>
+    );
   }
 
   // ─── STRIPE RETURN LOADING SCREEN ────────────────────────────────────────

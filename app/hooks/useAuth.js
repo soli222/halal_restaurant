@@ -7,6 +7,7 @@ export function useAuth(showToast) {
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const [pendingOwnerSignup, setPendingOwnerSignup] = useState(false);
   const [pendingOwnerSubmit, setPendingOwnerSubmit] = useState(false);
   const [confirmSwitchRole, setConfirmSwitchRole] = useState(false);
@@ -39,6 +40,7 @@ export function useAuth(showToast) {
         setUserRole(null);
         setOnboardingComplete(false);
       }
+      setAuthLoading(false);
     });
     return unsub;
   }, [pendingOwnerSignup, pendingOwnerSubmit]);
@@ -79,7 +81,7 @@ export function useAuth(showToast) {
   }
 
   return {
-    user,
+    user, authLoading,
     userRole, setUserRole,
     onboardingComplete, setOnboardingComplete,
     pendingOwnerSignup, setPendingOwnerSignup,
