@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Toast from '../Toast';
 import { CUISINES, CUISINE_IMAGES, DEFAULT_FOOD_IMAGE } from '../../constants';
 import { getOpenStatus, formatTime } from '../../utils/restaurant';
@@ -38,6 +39,16 @@ export default function HomeView({
   showInstallBanner, setShowInstallBanner,
   deferredPrompt, setDeferredPrompt,
 }) {
+  const [showAddRestaurantConfirm, setShowAddRestaurantConfirm] = useState(false);
+
+  function handleListRestaurantClick() {
+    if (user && userRole === 'owner' && onboardingComplete) {
+      setShowAddRestaurantConfirm(true);
+    } else {
+      onStartOwnerOnboarding();
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#050505] text-gray-100 relative overflow-x-hidden">
       {/* Ambient background glows + dot pattern */}
@@ -48,6 +59,38 @@ export default function HomeView({
       </div>
 
       <Toast toasts={toasts} />
+
+      {/* Add another restaurant confirmation modal */}
+      {showAddRestaurantConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAddRestaurantConfirm(false)} />
+          <div className="relative bg-[#111111] border border-white/10 rounded-2xl p-7 max-w-md w-full shadow-2xl space-y-5">
+            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 mx-auto">
+              <span className="text-2xl">🏪</span>
+            </div>
+            <div className="text-center space-y-2">
+              <h2 className="text-base font-bold text-white">You already have a restaurant listed</h2>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Do you want to add another one?
+              </p>
+            </div>
+            <div className="space-y-2.5">
+              <button
+                onClick={() => { setShowAddRestaurantConfirm(false); onStartOwnerOnboarding(); }}
+                className="w-full bg-amber-500 hover:bg-amber-400 active:scale-95 text-black font-bold px-6 py-3 rounded-xl text-sm transition-all duration-200 shadow-lg shadow-amber-500/20"
+              >
+                Yes, add another restaurant →
+              </button>
+              <button
+                onClick={() => setShowAddRestaurantConfirm(false)}
+                className="w-full text-sm text-gray-500 hover:text-gray-300 py-2 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <header className="bg-[#050505]/90 backdrop-blur-sm border-b border-white/[0.06] px-5 py-5 sticky top-0 z-10">
@@ -172,7 +215,7 @@ export default function HomeView({
                 </div>
                 <div className="flex flex-col gap-3 sm:items-center sm:flex-shrink-0">
                   <button
-                    onClick={onStartOwnerOnboarding}
+                    onClick={handleListRestaurantClick}
                     className="whitespace-nowrap bg-amber-500 hover:bg-amber-400 active:scale-95 text-black font-bold px-6 py-3.5 rounded-2xl text-sm transition-all duration-200 shadow-lg shadow-amber-500/25"
                   >
                     List my restaurant →
