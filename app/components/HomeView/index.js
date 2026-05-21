@@ -119,8 +119,8 @@ export default function HomeView({
         </div>
         <div className="h-px w-full" style={{ background: 'linear-gradient(to right, transparent, rgba(34,197,94,0.3), transparent)', boxShadow: '0 0 8px rgba(34,197,94,0.2)' }} />
 
-        {/* Informational sections — shown to customers and logged-out visitors only */}
-        {!selected && (!user || userRole === 'customer') && (
+        {/* Informational sections — shown to customers, logged-out visitors, and owners */}
+        {!selected && (!user || userRole === 'customer' || userRole === 'owner') && (
           <div className="space-y-10">
             {/* Trust highlights — compact single row */}
             <div className="grid grid-cols-4 divide-x divide-white/[0.06] bg-[#111111] border border-white/[0.06] rounded-2xl overflow-hidden">
@@ -177,12 +177,14 @@ export default function HomeView({
                   >
                     List my restaurant →
                   </button>
-                  <button
-                    onClick={onOwnerSignIn}
-                    className="whitespace-nowrap text-sm font-medium text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:border-amber-500/60 px-6 py-2.5 rounded-2xl transition-all duration-200"
-                  >
-                    Already listed? Sign in
-                  </button>
+                  {(!user || userRole !== 'owner') && (
+                    <button
+                      onClick={onOwnerSignIn}
+                      className="whitespace-nowrap text-sm font-medium text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:border-amber-500/60 px-6 py-2.5 rounded-2xl transition-all duration-200"
+                    >
+                      Already listed? Sign in
+                    </button>
+                  )}
                   <p className="text-xs text-gray-600 text-center">7 days free · Cancel anytime</p>
                 </div>
               </div>
