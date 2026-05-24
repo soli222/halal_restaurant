@@ -23,6 +23,8 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserR
   const [certNumberNA, setCertNumberNA] = useState(false);
   const [certNumberNADetails, setCertNumberNADetails] = useState('');
   const [certExpiry, setCertExpiry] = useState('');
+  const [halalStandard, setHalalStandard] = useState('');
+  const [alcoholPolicy, setAlcoholPolicy] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [mapsUrl, setMapsUrl] = useState('');
   const [confirmOwnership, setConfirmOwnership] = useState(false);
@@ -121,7 +123,7 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserR
         businessName: ownerBusinessName.trim(),
         streetAddress: ownerStreetAddress.trim() || null,
         ownerCity: ownerCity.trim(),
-        state: ownerState.trim() || null,
+        state: ownerState.trim(),
         zip: ownerZip.trim() || null,
         cuisineType: ownerCuisineType === 'Other' ? (cuisineOther.trim() || 'Other') : ownerCuisineType,
         cuisineOther: ownerCuisineType === 'Other' ? cuisineOther.trim() : null,
@@ -135,6 +137,8 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserR
         certNumberNA: certNumberNA || false,
         certNumberNADetails: certNumberNA ? certNumberNADetails.trim() : null,
         certExpiryDate: certExpiry,
+        halalStandard: halalStandard || null,
+        alcoholPolicy: alcoholPolicy || null,
         websiteUrl: websiteUrl.trim() || null,
         mapsUrl: mapsUrl.trim() || null,
         status: 'pending',
@@ -189,6 +193,8 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserR
     certNumberNA, setCertNumberNA,
     certNumberNADetails, setCertNumberNADetails,
     certExpiry, setCertExpiry,
+    halalStandard, setHalalStandard,
+    alcoholPolicy, setAlcoholPolicy,
     websiteUrl, setWebsiteUrl,
     mapsUrl, setMapsUrl,
     confirmOwnership, setConfirmOwnership,

@@ -49,6 +49,39 @@ export const CUISINE_IMAGES = {
 
 export const DEFAULT_FOOD_IMAGE = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fit=crop&q=80';
 
+export const US_STATES = [
+  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
+  'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
+  'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan',
+  'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
+  'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio',
+  'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
+  'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia',
+  'Wisconsin', 'Wyoming', 'District of Columbia',
+];
+
+export const CANADIAN_PROVINCES = [
+  'Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 'Newfoundland and Labrador',
+  'Northwest Territories', 'Nova Scotia', 'Nunavut', 'Ontario', 'Prince Edward Island',
+  'Quebec', 'Saskatchewan', 'Yukon',
+];
+
+export const STATE_OPTIONS = [
+  { group: 'US States', options: US_STATES },
+  { group: 'Canadian Provinces & Territories', options: CANADIAN_PROVINCES },
+];
+
+export const HALAL_STANDARDS = [
+  { value: 'certified_only', label: 'Certified Only' },
+  { value: 'zabiha_only', label: 'Zabiha Only' },
+  { value: 'hand_cut_zabiha', label: 'Hand-Cut Zabiha' },
+];
+
+export const ALCOHOL_POLICIES = [
+  { value: 'no_alcohol', label: 'No Alcohol Served' },
+  { value: 'alcohol_served', label: 'Alcohol Served' },
+];
+
 export const DAYS = [
   { key: 'mon', label: 'Mon' },
   { key: 'tue', label: 'Tue' },

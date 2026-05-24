@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Toast from '../Toast';
-import { DAYS } from '../../constants';
+import { DAYS, HALAL_STANDARDS, ALCOHOL_POLICIES } from '../../constants';
 
 const RATING_LABELS = {
   recommended:     { label: 'Highly Recommended', style: 'bg-green-500/15 border-green-500/25 text-green-400' },
@@ -336,7 +336,10 @@ export default function OwnerDashboard({
                     {[
                       { label: 'Business name', value: verificationRequest.businessName },
                       { label: 'City', value: verificationRequest.ownerCity },
+                      { label: 'State / Province', value: verificationRequest.state },
                       { label: 'Cuisine', value: verificationRequest.cuisineType },
+                      { label: 'Halal Standard', value: verificationRequest.halalStandard ? HALAL_STANDARDS.find(s => s.value === verificationRequest.halalStandard)?.label : null },
+                      { label: 'Alcohol Policy', value: verificationRequest.alcoholPolicy ? ALCOHOL_POLICIES.find(p => p.value === verificationRequest.alcoholPolicy)?.label : null },
                       { label: 'Certifying body', value: verificationRequest.certifyingBody },
                       { label: 'Cert number', value: verificationRequest.certificationNumber },
                       {

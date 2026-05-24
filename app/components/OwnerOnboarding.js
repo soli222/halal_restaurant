@@ -1,4 +1,4 @@
-import { CUISINES, CERTIFYING_BODIES } from '../constants';
+import { CUISINES, CERTIFYING_BODIES, STATE_OPTIONS, HALAL_STANDARDS, ALCOHOL_POLICIES } from '../constants';
 
 export default function OwnerOnboarding({
   ownerStep, setOwnerStep, onHome,
@@ -17,6 +17,8 @@ export default function OwnerOnboarding({
   certNumberNA, setCertNumberNA,
   certNumberNADetails, setCertNumberNADetails,
   certExpiry, setCertExpiry,
+  halalStandard, setHalalStandard,
+  alcoholPolicy, setAlcoholPolicy,
   halalCertFile, setHalalCertFile,
   businessLicenseFile, setBusinessLicenseFile,
   healthPermitFile, setHealthPermitFile,
@@ -35,6 +37,7 @@ export default function OwnerOnboarding({
       if (!ownerBusinessName.trim()) { setVerifyError('Please enter your restaurant name.'); return; }
       if (!ownerStreetAddress.trim()) { setVerifyError('Please enter your street address.'); return; }
       if (!ownerCity.trim()) { setVerifyError('Please enter your city.'); return; }
+      if (!ownerState.trim()) { setVerifyError('Please select a state or province.'); return; }
       if (!ownerCuisineType) { setVerifyError('Please select a cuisine type.'); return; }
       if (ownerCuisineType === 'Other' && !cuisineOther.trim()) { setVerifyError('Please describe your cuisine type.'); return; }
     }
@@ -129,13 +132,21 @@ export default function OwnerOnboarding({
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">State / Province</label>
-                <input
+                <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">State / Province <span className="text-red-400">*</span></label>
+                <select
                   value={ownerState}
                   onChange={e => setOwnerState(e.target.value)}
-                  placeholder="e.g. TX"
-                  className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 placeholder-gray-600 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200"
-                />
+                  className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200 appearance-none"
+                >
+                  <option value="" disabled>Select a state or province</option>
+                  {STATE_OPTIONS.map(({ group, options }) => (
+                    <optgroup key={group} label={group}>
+                      {options.map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="space-y-1.5">
@@ -250,6 +261,28 @@ export default function OwnerOnboarding({
                 className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200 [color-scheme:dark]"
               />
             </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Halal Standard</label>
+              <select
+                value={halalStandard}
+                onChange={e => setHalalStandard(e.target.value)}
+                className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200 appearance-none"
+              >
+                <option value="">Select a halal standard…</option>
+                {HALAL_STANDARDS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Alcohol Policy</label>
+              <select
+                value={alcoholPolicy}
+                onChange={e => setAlcoholPolicy(e.target.value)}
+                className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200 appearance-none"
+              >
+                <option value="">Select an alcohol policy…</option>
+                {ALCOHOL_POLICIES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
+            </div>
           </div>
         )}
 
@@ -332,7 +365,7 @@ export default function OwnerOnboarding({
                 { label: 'Restaurant', value: ownerBusinessName },
                 { label: 'Address', value: ownerStreetAddress },
                 { label: 'City', value: ownerCity },
-                { label: 'State', value: ownerState || '—' },
+                { label: 'State', value: ownerState },
                 { label: 'ZIP', value: ownerZip || '—' },
                 { label: 'Cuisine', value: ownerCuisineType === 'Other' ? `Other — ${cuisineOther}` : ownerCuisineType },
                 { label: 'Certifying Body', value: certifyingBody },
@@ -340,6 +373,8 @@ export default function OwnerOnboarding({
                 { label: 'Cert Number', value: certNumberNA ? 'N/A — see explanation' : certNumber },
                 ...(certNumberNA ? [{ label: 'Cert Number Note', value: certNumberNADetails }] : []),
                 { label: 'Cert Expiry', value: certExpiry },
+                ...(halalStandard ? [{ label: 'Halal Standard', value: HALAL_STANDARDS.find(s => s.value === halalStandard)?.label }] : []),
+                ...(alcoholPolicy ? [{ label: 'Alcohol Policy', value: ALCOHOL_POLICIES.find(p => p.value === alcoholPolicy)?.label }] : []),
                 { label: 'Halal Certificate', value: halalCertFile?.name },
                 { label: 'Business License', value: businessLicenseFile?.name },
                 { label: 'Health Permit', value: healthPermitFile?.name },

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { HALAL_STANDARDS, ALCOHOL_POLICIES } from '../constants';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
@@ -133,7 +134,14 @@ function Lightbox({ lightbox, onClose }) {
               <div className="space-y-3">
                 <InfoRow label="Business name" value={req.businessName} highlight />
                 <InfoRow label="City" value={req.ownerCity} />
+                <InfoRow label="State / Province" value={req.state} />
                 <InfoRow label="Cuisine" value={req.cuisineType || '—'} />
+                {req.halalStandard && (
+                  <InfoRow label="Halal Standard" value={HALAL_STANDARDS.find(s => s.value === req.halalStandard)?.label} />
+                )}
+                {req.alcoholPolicy && (
+                  <InfoRow label="Alcohol Policy" value={ALCOHOL_POLICIES.find(p => p.value === req.alcoholPolicy)?.label} />
+                )}
                 {req.cuisineOther && (
                   <div className="rounded-lg bg-purple-500/10 border border-purple-500/20 px-3 py-2">
                     <p className="text-[10px] font-semibold text-purple-400 uppercase tracking-wider mb-1">Custom cuisine type</p>
@@ -485,9 +493,25 @@ export default function AdminPage() {
                     <p className="text-sm text-gray-300 mt-0.5">{req.ownerCity || '—'}</p>
                   </div>
                   <div>
+                    <p className="text-[10px] text-gray-600 uppercase tracking-wider">State / Province</p>
+                    <p className="text-sm text-gray-300 mt-0.5">{req.state || '—'}</p>
+                  </div>
+                  <div>
                     <p className="text-[10px] text-gray-600 uppercase tracking-wider">Cuisine</p>
                     <p className="text-sm text-gray-300 mt-0.5">{req.cuisineType || '—'}</p>
                   </div>
+                  {req.halalStandard && (
+                    <div>
+                      <p className="text-[10px] text-gray-600 uppercase tracking-wider">Halal Standard</p>
+                      <p className="text-sm text-gray-300 mt-0.5">{HALAL_STANDARDS.find(s => s.value === req.halalStandard)?.label || '—'}</p>
+                    </div>
+                  )}
+                  {req.alcoholPolicy && (
+                    <div>
+                      <p className="text-[10px] text-gray-600 uppercase tracking-wider">Alcohol Policy</p>
+                      <p className="text-sm text-gray-300 mt-0.5">{ALCOHOL_POLICIES.find(p => p.value === req.alcoholPolicy)?.label || '—'}</p>
+                    </div>
+                  )}
                   {req.cuisineOther && (
                     <div className="col-span-2 rounded-lg bg-purple-500/10 border border-purple-500/20 px-3 py-2">
                       <p className="text-[10px] font-semibold text-purple-400 uppercase tracking-wider mb-1">Custom cuisine type</p>

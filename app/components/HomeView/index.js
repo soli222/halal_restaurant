@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Toast from '../Toast';
-import { CUISINES, CUISINE_IMAGES, DEFAULT_FOOD_IMAGE } from '../../constants';
+import { CUISINES, CUISINE_IMAGES, DEFAULT_FOOD_IMAGE, HALAL_STANDARDS, ALCOHOL_POLICIES } from '../../constants';
 import { getOpenStatus, formatTime } from '../../utils/restaurant';
 
 export default function HomeView({
@@ -35,6 +35,8 @@ export default function HomeView({
   selectLocation, clearLocation,
   sortedFiltered, suggestions,
   handleSuggestionSelect,
+  halalStandardFilter, setHalalStandardFilter,
+  alcoholFilter, setAlcoholFilter,
   // PWA
   showInstallBanner, setShowInstallBanner,
   deferredPrompt, setDeferredPrompt,
@@ -399,6 +401,34 @@ export default function HomeView({
           </button>
         </div>
 
+        {/* Halal standard + alcohol filters */}
+        <div className="flex flex-wrap gap-2">
+          <span className="text-[10px] text-gray-600 uppercase tracking-wider self-center mr-1">Standard:</span>
+          {HALAL_STANDARDS.map(s => (
+            <button
+              key={s.value}
+              onClick={() => setHalalStandardFilter(halalStandardFilter === s.value ? 'All' : s.value)}
+              className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all duration-200 ${
+                halalStandardFilter === s.value ? 'bg-green-500 text-white shadow-md shadow-green-500/20' : 'bg-transparent text-gray-400 hover:text-gray-200 border border-white/[0.12] hover:border-white/30'
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+          <span className="text-[10px] text-gray-600 uppercase tracking-wider self-center ml-2 mr-1">Alcohol:</span>
+          {ALCOHOL_POLICIES.map(p => (
+            <button
+              key={p.value}
+              onClick={() => setAlcoholFilter(alcoholFilter === p.value ? 'All' : p.value)}
+              className={`flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium tracking-wide transition-all duration-200 ${
+                alcoholFilter === p.value ? 'bg-green-500 text-white shadow-md shadow-green-500/20' : 'bg-transparent text-gray-400 hover:text-gray-200 border border-white/[0.12] hover:border-white/30'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
         {/* Top Rated */}
         {topRated.length > 0 && (
           <div className="space-y-3">
@@ -485,13 +515,19 @@ export default function HomeView({
               </div>
               <p className="text-white font-semibold text-lg">No halal restaurants found</p>
               <p className="text-gray-500 text-sm mt-1 max-w-xs mx-auto">Try a different search term or cuisine filter</p>
-              {(cuisineFilter !== 'All' || openNowFilter) && (
+              {(cuisineFilter !== 'All' || openNowFilter || halalStandardFilter !== 'All' || alcoholFilter !== 'All') && (
                 <div className="flex flex-col items-center gap-2 mt-4">
                   {cuisineFilter !== 'All' && (
                     <button onClick={() => setCuisineFilter('All')} className="text-sm text-green-400 hover:text-green-300 transition-colors">Clear cuisine filter</button>
                   )}
                   {openNowFilter && (
                     <button onClick={() => setOpenNowFilter(false)} className="text-sm text-green-400 hover:text-green-300 transition-colors">Clear "Open Now" filter</button>
+                  )}
+                  {halalStandardFilter !== 'All' && (
+                    <button onClick={() => setHalalStandardFilter('All')} className="text-sm text-green-400 hover:text-green-300 transition-colors">Clear halal standard filter</button>
+                  )}
+                  {alcoholFilter !== 'All' && (
+                    <button onClick={() => setAlcoholFilter('All')} className="text-sm text-green-400 hover:text-green-300 transition-colors">Clear alcohol filter</button>
                   )}
                 </div>
               )}
