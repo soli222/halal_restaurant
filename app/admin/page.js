@@ -214,6 +214,8 @@ export default function AdminPage() {
   const [requests, setRequests] = useState([]);
   const [loadingReqs, setLoadingReqs] = useState(false);
   const [actionLoading, setActionLoading] = useState({});
+  const [syncLoading, setSyncLoading] = useState({});
+  const [syncResult, setSyncResult] = useState({});
   const [reports, setReports] = useState([]);
   const [loadingReports, setLoadingReports] = useState(false);
   const [reportActionLoading, setReportActionLoading] = useState({});
@@ -282,6 +284,27 @@ export default function AdminPage() {
       if (data.ok) setRequests(prev => prev.map(r => r.id === reqId ? { ...r, status } : r));
     } catch (_) {}
     setActionLoading(prev => ({ ...prev, [reqId]: false }));
+  }
+
+  async function syncGooglePlaces(reqId) {
+    setSyncLoading(prev => ({ ...prev, [reqId]: true }));
+    setSyncResult(prev => ({ ...prev, [reqId]: null }));
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch('/api/admin/sync-google-places', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ reqId }),
+      });
+      const data = await res.json();
+      setSyncResult(prev => ({
+        ...prev,
+        [reqId]: data.ok ? { ok: true, msg: data.message || 'Synced!' } : { ok: false, msg: data.error || 'Not found on Google.' },
+      }));
+    } catch {
+      setSyncResult(prev => ({ ...prev, [reqId]: { ok: false, msg: 'Sync failed.' } }));
+    }
+    setSyncLoading(prev => ({ ...prev, [reqId]: false }));
   }
 
   function toggleCheck(reqId, key) {
@@ -704,13 +727,27 @@ export default function AdminPage() {
                     </>
                   )}
                   {verificationFilter === 'approved' && (
-                    <button
-                      onClick={() => updateStatus(req.id, 'rejected')}
-                      disabled={actionLoading[req.id]}
-                      className="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-medium px-4 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      {actionLoading[req.id] ? '…' : 'Reject listing'}
-                    </button>
+                    <>
+                      <button
+                        onClick={() => updateStatus(req.id, 'rejected')}
+                        disabled={actionLoading[req.id]}
+                        className="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-medium px-4 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {actionLoading[req.id] ? '…' : 'Reject listing'}
+                      </button>
+                      <button
+                        onClick={() => syncGooglePlaces(req.id)}
+                        disabled={syncLoading[req.id]}
+                        className="bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 text-sm font-medium px-4 py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {syncLoading[req.id] ? '…' : 'Sync Google'}
+                      </button>
+                      {syncResult[req.id] && (
+                        <span className={`text-xs ${syncResult[req.id].ok ? 'text-green-400' : 'text-red-400'}`}>
+                          {syncResult[req.id].msg}
+                        </span>
+                      )}
+                    </>
                   )}
                   {verificationFilter === 'rejected' && (
                     <button

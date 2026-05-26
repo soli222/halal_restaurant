@@ -63,6 +63,7 @@ export function useOwnerDashboard(showToast, user) {
   const [editHours, setEditHours] = useState(DEFAULT_HOURS);
   const [editWebsiteUrl, setEditWebsiteUrl] = useState('');
   const [editMapsUrl, setEditMapsUrl] = useState('');
+  const [editPhone, setEditPhone] = useState('');
   const [coverImageFile, setCoverImageFile] = useState(null);
   const [coverImagePreview, setCoverImagePreview] = useState('');
   const [moderatingCover, setModeratingCover] = useState(false);
@@ -174,6 +175,7 @@ export function useOwnerDashboard(showToast, user) {
       // Activate the first request
       setActiveIndex(0);
       seedEditFields(reqs[0]);
+      setEditPhone(matched[0]?.phone || '');
       setLinkedRestaurant(matched[0]);
       setGalleryPhotos(matched[0]?.galleryPhotos || []);
       await loadRestaurantData(matched[0]);
@@ -191,6 +193,7 @@ export function useOwnerDashboard(showToast, user) {
     const req = allVerificationRequests[index];
     const rest = allLinkedRestaurants[index];
     seedEditFields(req);
+    setEditPhone(rest?.phone || '');
     setLinkedRestaurant(rest);
     setGalleryPhotos(rest?.galleryPhotos || []);
     await loadRestaurantData(rest);
@@ -237,6 +240,7 @@ export function useOwnerDashboard(showToast, user) {
           hours: editHours,
           websiteUrl: editWebsiteUrl.trim() || null,
           mapsUrl: editMapsUrl.trim() || null,
+          phone: editPhone.trim() || null,
           ...(coverImageUrl !== verificationRequest.coverImageUrl ? { coverImageUrl } : {}),
         };
         await updateDoc(doc(db, 'restaurants', linkedRestaurant.id), restUpdates);
@@ -336,6 +340,7 @@ export function useOwnerDashboard(showToast, user) {
     editHours, setEditHours,
     editWebsiteUrl, setEditWebsiteUrl,
     editMapsUrl, setEditMapsUrl,
+    editPhone, setEditPhone,
     coverImageFile, coverImagePreview, moderatingCover,
     handleCoverChange,
     galleryPhotos, uploadingGallery, handleGalleryAdd, handleGalleryRemove,

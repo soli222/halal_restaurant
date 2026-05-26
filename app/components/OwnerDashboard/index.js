@@ -23,6 +23,7 @@ export default function OwnerDashboard({
   editHours, setEditHours,
   editWebsiteUrl, setEditWebsiteUrl,
   editMapsUrl, setEditMapsUrl,
+  editPhone, setEditPhone,
   coverImagePreview,
   moderatingCover = false,
   handleCoverChange,
@@ -420,6 +421,18 @@ export default function OwnerDashboard({
                         <input type="file" accept="image/*" className="hidden" onChange={handleGalleryAdd} disabled={uploadingGallery} />
                       </label>
                     )}
+                  </div>
+
+                  {/* Phone number */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-gray-500 uppercase tracking-wide">Phone Number</label>
+                    <input
+                      type="tel"
+                      value={editPhone}
+                      onChange={e => setEditPhone(e.target.value)}
+                      placeholder="e.g. (555) 123-4567"
+                      className="w-full bg-[#1A1A1A] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-amber-500/40 focus:ring-2 focus:ring-amber-500/10 transition-all duration-200"
+                    />
                   </div>
 
                   {/* Description */}

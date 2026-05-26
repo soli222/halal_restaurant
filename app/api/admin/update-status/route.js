@@ -1,5 +1,6 @@
 import { verifyToken } from '../../../lib/auth-helpers';
 import { adminDb } from '../../../lib/firebase-admin';
+import { fetchGooglePlacesData } from '../../../lib/google-places';
 import { Resend } from 'resend';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://halalgotos.com';
@@ -141,6 +142,33 @@ export async function POST(request) {
           });
         });
       }
+    }
+
+    // Auto-fetch phone + hours from Google Places after approval
+    if (status === 'approved' && process.env.GOOGLE_PLACES_API_KEY) {
+      try {
+        const reqSnapForPlaces = await adminDb.collection('verification_requests').doc(reqId).get();
+        const reqForPlaces = reqSnapForPlaces.data();
+        if (reqForPlaces) {
+          const placesData = await fetchGooglePlacesData(
+            reqForPlaces.businessName,
+            [reqForPlaces.streetAddress, reqForPlaces.ownerCity, reqForPlaces.state].filter(Boolean).join(', ')
+          );
+          if (placesData) {
+            const restSnap = await adminDb.collection('restaurants')
+              .where('verificationRequestId', '==', reqId)
+              .limit(1)
+              .get();
+            if (!restSnap.empty) {
+              const placesUpdate = { googlePlaceId: placesData.placeId };
+              if (placesData.phone) placesUpdate.phone = placesData.phone;
+              // Only set hours from Google if the owner didn't provide their own
+              if (placesData.hours && !reqForPlaces.hours) placesUpdate.hours = placesData.hours;
+              await restSnap.docs[0].ref.update(placesUpdate);
+            }
+          }
+        }
+      } catch (_) {}
     }
 
     // Notify the owner — use ownerId field if available, fall back to reqId for old-style docs

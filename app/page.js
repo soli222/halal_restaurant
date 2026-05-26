@@ -350,6 +350,8 @@ export default function Home() {
         setEditWebsiteUrl={ownerDashboard.setEditWebsiteUrl}
         editMapsUrl={ownerDashboard.editMapsUrl}
         setEditMapsUrl={ownerDashboard.setEditMapsUrl}
+        editPhone={ownerDashboard.editPhone}
+        setEditPhone={ownerDashboard.setEditPhone}
         coverImagePreview={ownerDashboard.coverImagePreview}
         moderatingCover={ownerDashboard.moderatingCover}
         handleCoverChange={ownerDashboard.handleCoverChange}
