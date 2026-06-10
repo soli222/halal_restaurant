@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Toast from './Toast';
-import { RATING_OPTIONS, RATING_STYLES, DAYS, HALAL_STANDARDS, ALCOHOL_POLICIES } from '../constants';
+import { RATING_OPTIONS, RATING_STYLES, DAYS, HALAL_STANDARDS } from '../constants';
 import { getOpenStatus, formatTime } from '../utils/restaurant';
 
 const RestaurantLocationMap = dynamic(() => import('./RestaurantLocationMap'), { ssr: false });
@@ -146,11 +146,6 @@ export default function RestaurantDetailView({
             {selected.halalStandard && (
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/20">
                 {HALAL_STANDARDS.find(s => s.value === selected.halalStandard)?.label}
-              </span>
-            )}
-            {selected.alcoholPolicy && (
-              <span className={`text-xs px-2.5 py-0.5 rounded-full border ${selected.alcoholPolicy === 'no_alcohol' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'}`}>
-                {ALCOHOL_POLICIES.find(p => p.value === selected.alcoholPolicy)?.label}
               </span>
             )}
           </div>

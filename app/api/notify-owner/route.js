@@ -5,7 +5,7 @@ import { verifyToken } from '../../lib/auth-helpers';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const RATING_LABELS = {
-  recommended: 'Highly Recommended',
+  recommended: 'Excellent',
   good: 'Good',
   average: 'Average',
 };

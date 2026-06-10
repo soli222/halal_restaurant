@@ -24,7 +24,6 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserR
   const [certNumberNADetails, setCertNumberNADetails] = useState('');
   const [certExpiry, setCertExpiry] = useState('');
   const [halalStandard, setHalalStandard] = useState('');
-  const [alcoholPolicy, setAlcoholPolicy] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [mapsUrl, setMapsUrl] = useState('');
   const [confirmOwnership, setConfirmOwnership] = useState(false);
@@ -138,7 +137,6 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserR
         certNumberNADetails: certNumberNA ? certNumberNADetails.trim() : null,
         certExpiryDate: certExpiry,
         halalStandard: halalStandard || null,
-        alcoholPolicy: alcoholPolicy || null,
         websiteUrl: websiteUrl.trim() || null,
         mapsUrl: mapsUrl.trim() || null,
         status: 'pending',
@@ -194,7 +192,6 @@ export function useOnboarding(user, showToast, setOwnerStep, ownerStep, setUserR
     certNumberNADetails, setCertNumberNADetails,
     certExpiry, setCertExpiry,
     halalStandard, setHalalStandard,
-    alcoholPolicy, setAlcoholPolicy,
     websiteUrl, setWebsiteUrl,
     mapsUrl, setMapsUrl,
     confirmOwnership, setConfirmOwnership,

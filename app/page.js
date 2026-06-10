@@ -91,7 +91,6 @@ export default function Home() {
     openNowFilter, setOpenNowFilter,
     sortBy, setSortBy,
     halalStandardFilter, setHalalStandardFilter,
-    alcoholFilter, setAlcoholFilter,
     showAllCuisines, setShowAllCuisines,
     showSuggestions, setShowSuggestions,
     highlightedIdx, setHighlightedIdx,
@@ -295,8 +294,6 @@ export default function Home() {
         setCertExpiry={onboarding.setCertExpiry}
         halalStandard={onboarding.halalStandard}
         setHalalStandard={onboarding.setHalalStandard}
-        alcoholPolicy={onboarding.alcoholPolicy}
-        setAlcoholPolicy={onboarding.setAlcoholPolicy}
         halalCertFile={onboarding.halalCertFile}
         setHalalCertFile={onboarding.setHalalCertFile}
         businessLicenseFile={onboarding.businessLicenseFile}
@@ -538,8 +535,6 @@ export default function Home() {
       handleSuggestionSelect={handleSuggestionSelect}
       halalStandardFilter={halalStandardFilter}
       setHalalStandardFilter={setHalalStandardFilter}
-      alcoholFilter={alcoholFilter}
-      setAlcoholFilter={setAlcoholFilter}
       showInstallBanner={showInstallBanner}
       setShowInstallBanner={setShowInstallBanner}
       deferredPrompt={deferredPrompt}

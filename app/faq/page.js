@@ -23,7 +23,7 @@ const FAQS = [
       },
       {
         q: 'What do the rating labels mean?',
-        a: 'Instead of a numeric star system, Halalgotos uses four descriptive ratings: Highly Recommended, Good, Average, and Not Recommended. We find these give a clearer picture of the overall dining experience.',
+        a: 'Instead of a numeric star system, Halalgotos uses three descriptive ratings: Excellent, Good, and Average. We find these give a clearer picture of the overall dining experience.',
       },
     ],
   },

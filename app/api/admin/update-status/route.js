@@ -128,7 +128,6 @@ export async function POST(request) {
             certificationNumber: req.certificationNumber || null,
             certExpiryDate: req.certExpiryDate || null,
             halalStandard: req.halalStandard || null,
-            alcoholPolicy: req.alcoholPolicy || null,
             halalCertificateUrl: req.halalCertificateUrl || null,
             businessLicenseUrl: req.businessLicenseUrl || null,
             healthPermitUrl: req.healthPermitUrl || null,

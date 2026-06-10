@@ -1,5 +1,5 @@
 export const RATING_OPTIONS = [
-  { value: 'recommended', label: '✅ Highly Recommended' },
+  { value: 'recommended', label: '✅ Excellent' },
   { value: 'good', label: '👍 Good' },
   { value: 'average', label: '😐 Average' },
 ];
@@ -77,10 +77,6 @@ export const HALAL_STANDARDS = [
   { value: 'hand_cut_zabiha', label: 'Hand-Cut Zabiha' },
 ];
 
-export const ALCOHOL_POLICIES = [
-  { value: 'no_alcohol', label: 'No Alcohol Served' },
-  { value: 'alcohol_served', label: 'Alcohol Served' },
-];
 
 export const DAYS = [
   { key: 'mon', label: 'Mon' },

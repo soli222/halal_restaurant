@@ -8,7 +8,6 @@ export function useSearch(restaurants, reviewStats, favourites) {
   const [openNowFilter, setOpenNowFilter] = useState(false);
   const [sortBy, setSortBy] = useState('default');
   const [halalStandardFilter, setHalalStandardFilter] = useState('All');
-  const [alcoholFilter, setAlcoholFilter] = useState('All');
   const [showAllCuisines, setShowAllCuisines] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightedIdx, setHighlightedIdx] = useState(-1);
@@ -116,9 +115,8 @@ export function useSearch(restaurants, reviewStats, favourites) {
       r.location?.includes(cityFilter);
     const matchesOpen = !openNowFilter || ['open', 'closing'].includes(getOpenStatus(r.hours)?.status);
     const matchesHalalStandard = halalStandardFilter === 'All' || r.halalStandard === halalStandardFilter;
-    const matchesAlcohol = alcoholFilter === 'All' || r.alcoholPolicy === alcoholFilter;
-    return matchesSearch && matchesCuisine && matchesCity && matchesOpen && matchesHalalStandard && matchesAlcohol;
-  }), [restaurants, search, cuisineFilter, cityFilter, openNowFilter, favourites, halalStandardFilter, alcoholFilter]);
+    return matchesSearch && matchesCuisine && matchesCity && matchesOpen && matchesHalalStandard;
+  }), [restaurants, search, cuisineFilter, cityFilter, openNowFilter, favourites, halalStandardFilter]);
 
   const sortedFiltered = useMemo(() => {
     const arr = [...filtered];
@@ -170,7 +168,6 @@ export function useSearch(restaurants, reviewStats, favourites) {
     openNowFilter, setOpenNowFilter,
     sortBy, setSortBy,
     halalStandardFilter, setHalalStandardFilter,
-    alcoholFilter, setAlcoholFilter,
     showAllCuisines, setShowAllCuisines,
     showSuggestions, setShowSuggestions,
     highlightedIdx, setHighlightedIdx,

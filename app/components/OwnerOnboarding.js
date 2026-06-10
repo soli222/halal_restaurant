@@ -1,4 +1,4 @@
-import { CUISINES, CERTIFYING_BODIES, STATE_OPTIONS, HALAL_STANDARDS, ALCOHOL_POLICIES } from '../constants';
+import { CUISINES, CERTIFYING_BODIES, STATE_OPTIONS, HALAL_STANDARDS } from '../constants';
 
 export default function OwnerOnboarding({
   ownerStep, setOwnerStep, onHome,
@@ -18,7 +18,6 @@ export default function OwnerOnboarding({
   certNumberNADetails, setCertNumberNADetails,
   certExpiry, setCertExpiry,
   halalStandard, setHalalStandard,
-  alcoholPolicy, setAlcoholPolicy,
   halalCertFile, setHalalCertFile,
   businessLicenseFile, setBusinessLicenseFile,
   healthPermitFile, setHealthPermitFile,
@@ -272,17 +271,6 @@ export default function OwnerOnboarding({
                 {HALAL_STANDARDS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Alcohol Policy</label>
-              <select
-                value={alcoholPolicy}
-                onChange={e => setAlcoholPolicy(e.target.value)}
-                className="w-full bg-[#111111] rounded-xl px-4 py-3 text-sm text-gray-100 border border-white/10 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/20 transition-all duration-200 appearance-none"
-              >
-                <option value="">Select an alcohol policy…</option>
-                {ALCOHOL_POLICIES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-              </select>
-            </div>
           </div>
         )}
 
@@ -374,7 +362,6 @@ export default function OwnerOnboarding({
                 ...(certNumberNA ? [{ label: 'Cert Number Note', value: certNumberNADetails }] : []),
                 { label: 'Cert Expiry', value: certExpiry },
                 ...(halalStandard ? [{ label: 'Halal Standard', value: HALAL_STANDARDS.find(s => s.value === halalStandard)?.label }] : []),
-                ...(alcoholPolicy ? [{ label: 'Alcohol Policy', value: ALCOHOL_POLICIES.find(p => p.value === alcoholPolicy)?.label }] : []),
                 { label: 'Halal Certificate', value: halalCertFile?.name },
                 { label: 'Business License', value: businessLicenseFile?.name },
                 { label: 'Health Permit', value: healthPermitFile?.name },
