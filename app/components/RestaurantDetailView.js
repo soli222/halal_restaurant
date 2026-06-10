@@ -539,7 +539,7 @@ export default function RestaurantDetailView({
                         </div>
                       )}
                       <span className="text-sm font-medium text-white">{r.userName}</span>
-                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${rStyle.pill}`}>{opt?.label}</span>
+                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0 ${rStyle.pill}`}>{opt?.label}</span>
                     </div>
                     {r.createdAt && (
                       <span className="text-xs text-gray-600 flex-shrink-0">
